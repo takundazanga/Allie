@@ -38,7 +38,7 @@ Open `index.html` in a browser. That's it.
 **Outside claude.ai** (local browser or Vercel deploy) — you need your Anthropic API key. Find all three `fetch` calls in the `<script>` block and add to each one's headers:
 
 ```js
-'x-api-key': 'sk-ant-api03-DXVxk0m6UcuYuqheGXQAtBoSf1HEurJQ02foIM1S2H1QskIC2qSw3THnM9HzdP8ziVb87FfQ07H1I4ydB0_NQ-5xO8BQAA',
+'x-api-key': 'sk-ant-api03-',
 'anthropic-version': '2023-06-01',
 'anthropic-dangerous-direct-browser-access': 'true'
 ```
