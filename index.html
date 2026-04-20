@@ -222,6 +222,21 @@ textarea::placeholder{color:var(--mute);font-style:italic}
 </head>
 <body>
 
+<!-- KEY SCREEN -->
+<div id="key-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-family:'Lora',serif;font-size:1.4rem;color:var(--amber-s)">Allie</div>
+  <div style="font-family:'DM Mono',monospace;font-size:.63rem;color:var(--mute);letter-spacing:.08em">paste your anthropic api key to begin</div>
+  <div style="display:flex;gap:8px;width:100%;max-width:420px;padding:0 24px">
+    <input id="key-input" type="password" placeholder="sk-ant-..." onkeydown="if(event.key==='Enter')saveKey()"
+      style="flex:1;background:var(--surf2);border:1px solid var(--line2);border-radius:8px;padding:10px 14px;color:var(--ink);font-family:'DM Mono',monospace;font-size:.75rem;outline:none">
+    <button onclick="saveKey()" style="padding:10px 20px;background:var(--amber);border:none;border-radius:8px;color:white;font-family:'DM Mono',monospace;font-size:.7rem;cursor:pointer">go</button>
+  </div>
+  <div id="key-err" style="font-family:'DM Mono',monospace;font-size:.6rem;color:#c0392b;min-height:14px"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mute);max-width:340px;text-align:center;line-height:1.9">
+    stored in your browser only — never sent anywhere except anthropic directly.<br>get a key at console.anthropic.com
+  </div>
+</div>
+
 <div class="topbar">
   <div class="wordmark">Allie <small>/ taku's workspace</small></div>
   <div class="top-nav">
@@ -230,7 +245,10 @@ textarea::placeholder{color:var(--mute);font-style:italic}
     <button class="top-btn" onclick="switchView('poems',this)">lbls</button>
     <button class="top-btn" onclick="switchView('skills',this)">skills lab</button>
   </div>
-  <div class="pulse" title="alive"></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button onclick="clearKey()" title="change api key" style="background:transparent;border:1px solid var(--line2);border-radius:5px;color:var(--mute);font-family:'DM Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--soft)'" onmouseout="this.style.color='var(--mute)'">key</button>
+    <div class="pulse" title="alive"></div>
+  </div>
 </div>
 
 <div class="body">
@@ -596,6 +614,36 @@ textarea::placeholder{color:var(--mute);font-style:italic}
 </div>
 
 <script>
+// ── API KEY ────────────────────────────────────────────────────
+let API_KEY = localStorage.getItem('allie_key') || '';
+
+function checkKey() {
+  if (!API_KEY) {
+    document.getElementById('key-screen').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
+  } else {
+    document.getElementById('key-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'flex';
+  }
+}
+
+function saveKey() {
+  const val = document.getElementById('key-input').value.trim();
+  if (!val.startsWith('sk-ant-')) {
+    document.getElementById('key-err').textContent = 'That doesn\'t look right — should start with sk-ant-';
+    return;
+  }
+  API_KEY = val;
+  localStorage.setItem('allie_key', val);
+  checkKey();
+}
+
+function clearKey() {
+  API_KEY = '';
+  localStorage.removeItem('allie_key');
+  checkKey();
+}
+
 // ── STATE ──────────────────────────────────────────────────────
 let mode='think', ctx='full';
 let history=[], skillHistory=[];
@@ -903,7 +951,7 @@ async function sendMain() {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:history})
     });
     const data = await res.json();
@@ -989,7 +1037,7 @@ async function kickModal(sys, prompt) {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})
     });
     const data = await res.json();
@@ -1019,7 +1067,7 @@ async function sendModal() {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})
     });
     const data = await res.json();
@@ -1039,6 +1087,7 @@ async function sendModal() {
 // ── INIT ───────────────────────────────────────────────────────
 renderSkills();
 loadToday();
+checkKey();
 document.getElementById('overlay').addEventListener('click', e=>{if(e.target===e.currentTarget)closeModal();});
 </script>
 </body>
