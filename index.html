@@ -2,102 +2,134 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Allie</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap');
-
 :root {
-  --bg:#0d0b09; --surf:#141210; --surf2:#1a1714;
-  --line:#252018; --line2:#332c22;
+  --bg:#0a0907; --surf:#121008; --surf2:#181410;
+  --line:#1e1a12; --line2:#2a2318;
   --amber:#bf5c22; --amber-s:#d97840;
-  --glow:rgba(191,92,34,0.10); --dim:rgba(191,92,34,0.05);
+  --glow:rgba(191,92,34,0.12); --dim:rgba(191,92,34,0.06);
   --ink:#e2d9ce; --soft:#9a8878; --mute:#524640;
   --gold:#b89a6e; --sage:#567a62; --sky:#486878;
   --violet:#7a6a9a;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:999}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;height:100vh;display:flex;flex-direction:column}
+#bg-canvas{position:fixed;inset:0;z-index:0;opacity:.6}
+#particles-2d{position:fixed;inset:0;z-index:1;pointer-events:none}
+#burst-canvas{position:fixed;inset:0;pointer-events:none;z-index:997}
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");pointer-events:none;z-index:998}
 
 /* topbar */
-.topbar{height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--line);background:var(--surf);flex-shrink:0}
-.wordmark{font-family:'Lora',serif;font-size:1rem;font-weight:500;color:var(--amber-s);letter-spacing:.04em}
-.wordmark small{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mute);font-weight:300;letter-spacing:.08em;margin-left:8px}
-.top-nav{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:3px}
-.top-btn{padding:4px 13px;border-radius:4px;border:none;background:transparent;color:var(--mute);font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.04em;cursor:pointer;transition:all .18s}
+.topbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--line);background:rgba(10,9,7,.95);flex-shrink:0;position:relative;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.hamburger{background:transparent;border:none;color:var(--mute);cursor:pointer;padding:4px;display:flex;flex-direction:column;gap:4px;transition:color .2s}
+.hamburger:hover{color:var(--amber-s)}
+.hamburger span{display:block;width:18px;height:1.5px;background:currentColor;border-radius:2px;transition:all .25s}
+.hamburger.open span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+.wordmark{font-family:'Lora',serif;font-size:.95rem;font-weight:500;color:var(--amber-s);letter-spacing:.04em;cursor:pointer;transition:opacity .2s}
+.wordmark:hover{opacity:.7}
+.wordmark small{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mute);font-weight:300;letter-spacing:.08em;margin-left:6px}
+.top-nav{display:flex;gap:2px;background:rgba(10,9,7,.8);border:1px solid var(--line);border-radius:7px;padding:3px}
+.top-btn{padding:4px 9px;border-radius:4px;border:none;background:transparent;color:var(--mute);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.04em;cursor:pointer;transition:all .18s;white-space:nowrap}
 .top-btn.active{background:var(--glow);color:var(--amber-s);border:1px solid rgba(191,92,34,.22)}
 .top-btn:hover:not(.active){color:var(--soft)}
-.pulse{width:6px;height:6px;border-radius:50%;background:var(--sage);box-shadow:0 0 7px rgba(86,122,98,.7);animation:breathe 3s ease-in-out infinite}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.streak{display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gold)}
+.streak-flame{font-size:.8rem;animation:flicker 2s ease-in-out infinite}
+@keyframes flicker{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(.94)}}
+.xp-badge{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--amber-s);background:var(--glow);border:1px solid rgba(191,92,34,.2);padding:2px 7px;border-radius:8px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--sage);box-shadow:0 0 7px rgba(86,122,98,.7);animation:breathe 3s ease-in-out infinite}
 @keyframes breathe{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* layout */
-.body{display:flex;flex:1;overflow:hidden}
-
-/* sidebar */
-.sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;overflow-y:auto}
+.app-body{display:flex;flex:1;overflow:hidden;position:relative;z-index:10}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(10,9,7,.75);z-index:200}
+.sidebar-backdrop.open{display:block}
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--line);background:rgba(12,10,8,.98);display:flex;flex-direction:column;overflow-y:auto;position:relative;z-index:201;transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .sidebar::-webkit-scrollbar{width:2px}
 .sidebar::-webkit-scrollbar-thumb{background:var(--line2)}
-.sb-sec{padding:16px 13px 11px;border-bottom:1px solid var(--line)}
-.sb-lbl{font-family:'DM Mono',monospace;font-size:.53rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:9px}
+@media(max-width:700px){
+  .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%);z-index:210}
+  .sidebar.open{transform:translateX(0)}
+  .top-btn{font-size:.54rem;padding:4px 7px}
+}
+.sb-sec{padding:14px 12px 10px;border-bottom:1px solid var(--line)}
+.sb-lbl{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:8px}
 .sb-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:all .15s;margin-bottom:1px;border:1px solid transparent}
 .sb-item:hover{background:var(--dim)}
 .sb-item.active{background:var(--glow);border-color:rgba(191,92,34,.18)}
 .sb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.sb-name{font-size:.73rem;color:var(--soft);line-height:1.2}
+.sb-name{font-size:.72rem;color:var(--soft);line-height:1.2}
 .sb-item.active .sb-name{color:var(--ink)}
-.sb-sub{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mute);margin-top:1px}
-.sb-icon{font-size:.65rem;color:var(--amber-s);width:14px;text-align:center;flex-shrink:0}
-.sb-tagline{font-family:'Lora',serif;font-size:.65rem;font-style:italic;color:var(--mute);line-height:1.9;padding:3px 4px}
+.sb-sub{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute);margin-top:1px}
+.sb-icon{font-size:.62rem;color:var(--amber-s);width:13px;text-align:center;flex-shrink:0}
+.sb-tagline{font-family:'Lora',serif;font-size:.62rem;font-style:italic;color:var(--mute);line-height:1.9;padding:3px 4px}
 
 /* today panel */
-.today-panel{padding:13px;border-bottom:1px solid var(--line)}
-.today-lbl{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:8px}
-.today-field{margin-bottom:6px}
-.today-q{font-size:.64rem;color:var(--mute);margin-bottom:2px}
-.today-input{width:100%;background:var(--surf2);border:1px solid var(--line);border-radius:5px;padding:4px 7px;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:300;outline:none;resize:none;line-height:1.5;transition:border-color .18s}
+.today-panel{padding:12px;border-bottom:1px solid var(--line)}
+.today-lbl{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:7px}
+.today-field{margin-bottom:5px}
+.today-q{font-size:.61rem;color:var(--mute);margin-bottom:2px}
+.today-input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:5px;padding:4px 7px;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.66rem;font-weight:300;outline:none;resize:none;line-height:1.5;transition:border-color .18s}
 .today-input:focus{border-color:rgba(191,92,34,.25);color:var(--ink)}
-.today-input::placeholder{color:var(--mute);opacity:.6}
+.today-input::placeholder{color:var(--mute);opacity:.5}
+
+/* xp section */
+.xp-section{padding:11px 12px;border-bottom:1px solid var(--line)}
+.xp-bar-wrap{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:5px 0 4px}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--gold));border-radius:2px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.xp-meta{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.49rem;color:var(--mute)}
 
 /* content */
-.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:5}
 .view{display:none;flex-direction:column;flex:1;overflow:hidden}
 .view.active{display:flex}
 
 /* feed */
-.feed{flex:1;overflow-y:auto;padding:38px 46px;display:flex;flex-direction:column;gap:30px}
-.feed::-webkit-scrollbar{width:3px}
+.feed{flex:1;overflow-y:auto;padding:28px 24px;display:flex;flex-direction:column;gap:24px}
+.feed::-webkit-scrollbar{width:2px}
 .feed::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+@media(max-width:700px){.feed{padding:18px 14px}}
 
 /* welcome */
-.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;gap:12px;opacity:0;animation:up .7s ease forwards .2s}
-@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.welcome-mark{font-family:'Lora',serif;font-size:2.4rem;color:var(--amber);opacity:.15;margin-bottom:2px}
-.welcome-title{font-family:'Lora',serif;font-size:1.3rem;font-weight:400;color:var(--ink)}
-.welcome-body{font-size:.76rem;color:var(--mute);max-width:380px;line-height:1.95}
-.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;max-width:500px}
-.chip{padding:5px 13px;border:1px solid var(--line2);border-radius:20px;background:transparent;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.7rem;cursor:pointer;transition:all .18s;font-weight:300}
-.chip:hover{border-color:var(--amber);color:var(--amber-s);background:var(--dim)}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;gap:11px;opacity:0;animation:up .7s ease forwards .2s}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.welcome-mark{font-family:'Lora',serif;font-size:2.6rem;color:var(--amber);opacity:.12;margin-bottom:2px;animation:pm 4s ease-in-out infinite}
+@keyframes pm{0%,100%{opacity:.12}50%{opacity:.22}}
+.welcome-title{font-family:'Lora',serif;font-size:1.2rem;font-weight:400;color:var(--ink)}
+.welcome-body{font-size:.74rem;color:var(--mute);max-width:320px;line-height:1.95}
+.chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px;max-width:460px}
+.chip{padding:5px 11px;border:1px solid var(--line2);border-radius:20px;background:transparent;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.67rem;cursor:pointer;transition:all .2s;font-weight:300}
+.chip:hover{border-color:var(--amber);color:var(--amber-s);background:var(--dim);transform:translateY(-1px)}
 
-/* register banner */
-.reg-banner{display:flex;align-items:center;gap:9px;padding:8px 14px;background:var(--dim);border:1px solid rgba(191,92,34,.12);border-radius:7px;opacity:0;animation:up .3s ease forwards}
-.reg-banner-icon{font-size:.65rem;color:var(--amber-s)}
-.reg-banner-text{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--soft);letter-spacing:.04em}
+/* reg banner */
+.reg-banner{display:flex;align-items:center;gap:9px;padding:7px 13px;background:var(--dim);border:1px solid rgba(191,92,34,.12);border-radius:7px;opacity:0;animation:up .3s ease forwards}
+.reg-banner-icon{font-size:.6rem;color:var(--amber-s)}
+.reg-banner-text{font-family:'DM Mono',monospace;font-size:.57rem;color:var(--soft);letter-spacing:.04em}
+
+/* xp toast */
+.xp-toast{position:fixed;bottom:80px;right:16px;background:rgba(14,12,9,.97);border:1px solid var(--amber);border-radius:9px;padding:8px 14px;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--amber-s);z-index:999;opacity:0;transform:translateY(8px);transition:all .28s;pointer-events:none}
+.xp-toast.show{opacity:1;transform:translateY(0)}
 
 /* messages */
 .msg{display:flex;flex-direction:column;gap:5px;opacity:0;animation:up .3s ease forwards;max-width:680px}
 .msg-meta{display:flex;align-items:center;gap:7px}
-.msg-author{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase}
+.msg-author{font-family:'DM Mono',monospace;font-size:.53rem;letter-spacing:.1em;text-transform:uppercase}
 .msg.user .msg-author{color:var(--gold)}
 .msg.allie .msg-author{color:var(--amber-s)}
-.msg-time{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute)}
-.msg-body{font-size:.85rem;line-height:1.85;color:var(--ink)}
+.msg-time{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mute)}
+.msg-body{font-size:.84rem;line-height:1.88;color:var(--ink)}
 .msg.user .msg-body{color:var(--soft);font-style:italic}
 .msg-body strong{color:var(--amber-s);font-weight:500}
 .msg-body em{color:var(--gold)}
-.msg-body p{margin-top:8px}
-.msg-body p:first-child{margin-top:0}
+.msg-body p{margin-top:8px}.msg-body p:first-child{margin-top:0}
 .msg-body ul,.msg-body ol{margin:8px 0 8px 18px}
 .msg-body li{margin-bottom:3px}
 
@@ -108,157 +140,191 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .dots span:nth-child(2){animation-delay:.18s}
 .dots span:nth-child(3){animation-delay:.36s}
 @keyframes dot{0%,100%{opacity:.18;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
-.thinking-text{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mute)}
+.thinking-text{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mute)}
 
 /* input */
-.input-wrap{border-top:1px solid var(--line);padding:14px 46px 18px;background:var(--surf);flex-shrink:0}
-.input-row{display:flex;align-items:flex-end;gap:9px;background:var(--surf2);border:1px solid var(--line2);border-radius:10px;padding:10px 13px;transition:border-color .2s,box-shadow .2s}
-.input-row:focus-within{border-color:rgba(191,92,34,.28);box-shadow:0 0 0 3px var(--dim)}
-textarea{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:300;line-height:1.6;resize:none;min-height:20px;max-height:130px;overflow-y:auto}
+.input-wrap{border-top:1px solid var(--line);padding:11px 18px 15px;background:rgba(10,9,7,.97);flex-shrink:0}
+@media(max-width:700px){.input-wrap{padding:9px 12px 13px}}
+.input-row{display:flex;align-items:flex-end;gap:9px;background:rgba(255,255,255,.03);border:1px solid var(--line2);border-radius:10px;padding:9px 12px;transition:border-color .2s,box-shadow .2s}
+.input-row:focus-within{border-color:rgba(191,92,34,.3);box-shadow:0 0 0 3px var(--dim)}
+textarea{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:300;line-height:1.6;resize:none;min-height:20px;max-height:120px;overflow-y:auto}
 textarea::placeholder{color:var(--mute);font-style:italic}
-.send{width:29px;height:29px;border-radius:6px;border:1px solid var(--amber);background:var(--glow);color:var(--amber-s);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
-.send:hover{background:var(--amber);color:white}
-.send:disabled{opacity:.22;cursor:not-allowed}
-.input-foot{display:flex;align-items:center;justify-content:space-between;margin-top:7px;padding:0 1px}
-.input-hint{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mute)}
+.send{width:30px;height:30px;border-radius:7px;border:1px solid var(--amber);background:var(--glow);color:var(--amber-s);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.send:hover{background:var(--amber);color:white;transform:scale(1.05)}
+.send:disabled{opacity:.22;cursor:not-allowed;transform:none}
+.input-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:0 1px}
+.input-hint{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute)}
 .foot-r{display:flex;align-items:center;gap:7px}
-.badge{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--amber-s);background:var(--glow);border:1px solid rgba(191,92,34,.16);padding:2px 8px;border-radius:10px}
-.fresh{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mute);background:transparent;border:1px solid var(--line2);padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
+.badge{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--amber-s);background:var(--glow);border:1px solid rgba(191,92,34,.16);padding:2px 8px;border-radius:10px}
+.fresh{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute);background:transparent;border:1px solid var(--line2);padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
 .fresh:hover{color:var(--soft)}
 
 /* skills */
-.skills-scroll{flex:1;overflow-y:auto;padding:34px 46px 46px}
-.skills-scroll::-webkit-scrollbar{width:3px}
-.skills-scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
-.skills-hero{margin-bottom:32px}
-.skills-hero h1{font-family:'Lora',serif;font-size:1.4rem;font-weight:400;color:var(--ink);margin-bottom:5px}
-.skills-hero p{font-size:.76rem;color:var(--mute);line-height:1.88;max-width:500px}
-.sk-group{margin-bottom:34px}
-.sk-lbl{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--line)}
-.sk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px}
-.sk-card{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:17px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
-.sk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:var(--c,var(--amber));opacity:.45;transition:opacity .18s}
-.sk-card:hover{border-color:var(--line2);background:var(--surf2);transform:translateY(-1px)}
+.skills-scroll,.poem-view,.pulse-view{flex:1;overflow-y:auto;padding:26px 24px 40px}
+.skills-scroll::-webkit-scrollbar,.poem-view::-webkit-scrollbar,.pulse-view::-webkit-scrollbar{width:2px}
+.skills-scroll::-webkit-scrollbar-thumb,.poem-view::-webkit-scrollbar-thumb,.pulse-view::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+@media(max-width:700px){.skills-scroll,.poem-view,.pulse-view{padding:18px 14px 32px}}
+.section-hero{margin-bottom:22px}
+.section-hero h1{font-family:'Lora',serif;font-size:1.3rem;font-weight:400;color:var(--ink);margin-bottom:4px}
+.section-hero p{font-size:.72rem;color:var(--mute);line-height:1.9;max-width:460px}
+.sk-group{margin-bottom:26px}
+.sk-lbl{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.sk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px}
+@media(max-width:700px){.sk-grid{grid-template-columns:1fr}}
+.sk-card{background:rgba(18,16,10,.85);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.sk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--amber));opacity:.35;transition:opacity .18s}
+.sk-card:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
 .sk-card:hover::before{opacity:.9}
-.sk-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
-.sk-domain{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute);letter-spacing:.07em}
-.sk-type{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mute);border:1px solid var(--line2);padding:1px 5px;border-radius:5px}
-.sk-name{font-family:'Lora',serif;font-size:.92rem;font-weight:400;color:var(--ink);margin-bottom:4px;line-height:1.3}
-.sk-desc{font-size:.7rem;color:var(--mute);line-height:1.72;margin-bottom:11px}
-.sk-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:11px}
-.sk-proj{font-family:'DM Mono',monospace;font-size:.5rem;padding:1px 6px;border-radius:5px;background:var(--dim);color:var(--amber-s);border:1px solid rgba(191,92,34,.11)}
+.sk-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.sk-domain{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--mute);letter-spacing:.07em}
+.sk-type{font-family:'DM Mono',monospace;font-size:.47rem;color:var(--mute);border:1px solid var(--line2);padding:1px 5px;border-radius:4px}
+.sk-name{font-family:'Lora',serif;font-size:.88rem;font-weight:400;color:var(--ink);margin-bottom:3px;line-height:1.3}
+.sk-desc{font-size:.67rem;color:var(--mute);line-height:1.7;margin-bottom:9px}
+.sk-tags{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:9px}
+.sk-proj{font-family:'DM Mono',monospace;font-size:.47rem;padding:1px 5px;border-radius:4px;background:var(--dim);color:var(--amber-s);border:1px solid rgba(191,92,34,.1)}
 .sk-bar-row{display:flex;align-items:center;gap:7px}
-.sk-bar{flex:1;height:1.5px;background:var(--line);border-radius:1px;overflow:hidden}
+.sk-bar{flex:1;height:2px;background:var(--line);border-radius:1px;overflow:hidden}
 .sk-fill{height:100%;border-radius:1px;background:var(--c,var(--amber));opacity:.55}
-.sk-pct{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute);flex-shrink:0}
+.sk-pct{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--mute);flex-shrink:0}
 
-/* poem tracker panel */
-.poem-view{flex:1;overflow-y:auto;padding:34px 46px 46px}
-.poem-view::-webkit-scrollbar{width:3px}
-.poem-view::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
-.poem-hero{margin-bottom:28px}
-.poem-hero h1{font-family:'Lora',serif;font-size:1.4rem;font-weight:400;color:var(--ink);margin-bottom:4px}
-.poem-hero p{font-size:.75rem;color:var(--mute);line-height:1.9;max-width:480px}
-.act-block{margin-bottom:30px}
-.act-title{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;color:var(--amber-s);text-transform:uppercase;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
-.poem-row{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:7px;border:1px solid var(--line);margin-bottom:5px;cursor:pointer;transition:all .15s;background:var(--surf)}
-.poem-row:hover{border-color:var(--line2);background:var(--surf2)}
+/* poem */
+.lbls-progress{margin-bottom:18px}
+.lbls-bar-wrap{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.lbls-bar-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--gold));border-radius:2px}
+.lbls-meta{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute)}
+.act-block{margin-bottom:22px}
+.act-title{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.14em;color:var(--amber-s);text-transform:uppercase;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.poem-row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);margin-bottom:4px;cursor:pointer;transition:all .15s;background:rgba(18,16,10,.7)}
+.poem-row:hover{border-color:var(--line2);background:rgba(24,20,14,.9);transform:translateX(2px)}
 .poem-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.poem-title{font-size:.78rem;color:var(--ink);flex:1}
-.poem-act-tag{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute);border:1px solid var(--line2);padding:1px 6px;border-radius:4px}
-.poem-state{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute)}
-.poem-locked{font-size:.65rem;color:var(--sage)}
-.intermission{padding:10px 14px;background:var(--dim);border:1px solid rgba(191,92,34,.1);border-radius:7px;margin-bottom:5px}
-.intermission-lbl{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--amber-s);letter-spacing:.06em;margin-bottom:3px}
-.intermission-note{font-size:.7rem;color:var(--mute);font-style:italic}
+.poem-title{font-size:.76rem;color:var(--ink);flex:1}
+.poem-act-tag{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--mute);border:1px solid var(--line2);padding:1px 5px;border-radius:4px}
+.poem-state{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--mute)}
+.poem-locked{font-size:.6rem;color:var(--sage)}
+.intermission{padding:8px 12px;background:var(--dim);border:1px solid rgba(191,92,34,.1);border-radius:7px;margin-bottom:4px;cursor:pointer;transition:background .15s}
+.intermission:hover{background:rgba(191,92,34,.08)}
+.intermission-lbl{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--amber-s);letter-spacing:.06em;margin-bottom:2px}
+.intermission-note{font-size:.67rem;color:var(--mute);font-style:italic}
+
+/* pulse */
+.pulse-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+@media(max-width:600px){.pulse-grid{grid-template-columns:1fr}}
+.pulse-card{background:rgba(18,16,10,.7);border:1px solid var(--line);border-radius:10px;padding:13px}
+.pulse-card-lbl{font-family:'DM Mono',monospace;font-size:.51rem;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;margin-bottom:6px}
+.pulse-ta{width:100%;background:transparent;border:none;outline:none;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:300;resize:none;line-height:1.7;min-height:50px}
+.pulse-ta::placeholder{color:var(--mute);opacity:.4;font-style:italic}
+.pulse-divider{height:1px;background:var(--line);margin:16px 0}
+.pulse-section-lbl{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.13em;color:var(--mute);text-transform:uppercase;margin-bottom:9px}
+.project-status-row{display:flex;align-items:center;gap:9px;padding:8px 11px;background:rgba(18,16,10,.6);border:1px solid var(--line);border-radius:8px;margin-bottom:5px}
+.ps-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ps-name{font-size:.73rem;color:var(--ink);flex:1;font-family:'Lora',serif}
+.ps-input{background:transparent;border:none;outline:none;color:var(--soft);font-family:'DM Mono',monospace;font-size:.55rem;width:130px;text-align:right}
+.ps-input::placeholder{color:var(--mute);opacity:.4}
 
 /* modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(13,11,9,.83);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(10,9,7,.88);z-index:400;align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:var(--surf);border:1px solid var(--line2);border-radius:13px;width:92%;max-width:640px;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 60px rgba(0,0,0,.5)}
-.modal-head{padding:20px 24px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start}
-.modal-title{font-family:'Lora',serif;font-size:1.05rem;font-weight:400;color:var(--ink);margin-bottom:3px}
-.modal-sub{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mute);letter-spacing:.06em}
-.modal-x{background:transparent;border:none;color:var(--mute);font-size:.95rem;cursor:pointer;line-height:1;padding:2px;transition:color .15s}
+.modal{background:rgba(14,12,9,.99);border:1px solid var(--line2);border-radius:14px;width:94%;max-width:640px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.modal-head{padding:17px 21px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start}
+.modal-title{font-family:'Lora',serif;font-size:.98rem;font-weight:400;color:var(--ink);margin-bottom:2px}
+.modal-sub{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute);letter-spacing:.06em}
+.modal-x{background:transparent;border:none;color:var(--mute);font-size:.9rem;cursor:pointer;line-height:1;padding:3px;transition:color .15s}
 .modal-x:hover{color:var(--ink)}
-.modal-feed{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.modal-feed{flex:1;overflow-y:auto;padding:17px 21px;display:flex;flex-direction:column;gap:13px}
 .modal-feed::-webkit-scrollbar{width:2px}
 .modal-feed::-webkit-scrollbar-thumb{background:var(--line2)}
-.learn{font-size:.83rem;line-height:1.85;color:var(--ink);opacity:0;animation:up .3s ease forwards}
-.learn.user{color:var(--soft);font-style:italic;font-size:.76rem}
+.learn{font-size:.81rem;line-height:1.88;color:var(--ink);opacity:0;animation:up .3s ease forwards}
+.learn.user{color:var(--soft);font-style:italic;font-size:.74rem}
 .learn strong{color:var(--amber-s);font-weight:500}
 .learn em{color:var(--gold)}
-.learn p{margin-top:8px}
-.learn p:first-child{margin-top:0}
-.modal-foot{border-top:1px solid var(--line);padding:12px 24px 16px;display:flex;gap:8px;align-items:flex-end;background:var(--surf)}
-.modal-ta{flex:1;background:var(--surf2);border:1px solid var(--line2);border-radius:8px;padding:8px 11px;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:300;outline:none;resize:none;min-height:20px;max-height:85px;line-height:1.5;transition:border-color .18s}
+.learn p{margin-top:8px}.learn p:first-child{margin-top:0}
+.modal-foot{border-top:1px solid var(--line);padding:10px 21px 13px;display:flex;gap:8px;align-items:flex-end;background:rgba(12,10,8,.99)}
+.modal-ta{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:300;outline:none;resize:none;min-height:20px;max-height:80px;line-height:1.5;transition:border-color .18s}
 .modal-ta:focus{border-color:rgba(191,92,34,.28)}
 .modal-ta::placeholder{color:var(--mute);font-style:italic}
-.modal-send{width:29px;height:29px;border-radius:6px;border:1px solid var(--amber);background:var(--glow);color:var(--amber-s);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.modal-send{width:30px;height:30px;border-radius:7px;border:1px solid var(--amber);background:var(--glow);color:var(--amber-s);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
 .modal-send:hover{background:var(--amber);color:white}
 .modal-send:disabled{opacity:.22;cursor:not-allowed}
 
-/* weekly pulse */
-.pulse-view{flex:1;overflow-y:auto;padding:34px 46px 46px}
-.pulse-view::-webkit-scrollbar{width:3px}
-.pulse-view::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
-.pulse-hero{margin-bottom:28px}
-.pulse-hero h1{font-family:'Lora',serif;font-size:1.4rem;font-weight:400;color:var(--ink);margin-bottom:4px}
-.pulse-hero p{font-size:.75rem;color:var(--mute);line-height:1.9}
-.pulse-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.pulse-card{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:16px}
-.pulse-card-lbl{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;margin-bottom:8px}
-.pulse-ta{width:100%;background:transparent;border:none;outline:none;color:var(--soft);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:300;resize:none;line-height:1.7;min-height:60px}
-.pulse-ta::placeholder{color:var(--mute);opacity:.5;font-style:italic}
-.pulse-divider{height:1px;background:var(--line);margin:20px 0}
-.pulse-section-lbl{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.13em;color:var(--mute);text-transform:uppercase;margin-bottom:12px}
-.project-status-row{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--surf);border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
-.ps-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.ps-name{font-size:.76rem;color:var(--ink);flex:1;font-family:'Lora',serif}
-.ps-status{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mute)}
-.ps-input{background:transparent;border:none;outline:none;color:var(--soft);font-family:'DM Mono',monospace;font-size:.58rem;width:120px;text-align:right}
-.ps-input::placeholder{color:var(--mute);opacity:.5}
+/* settings modal */
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(10,9,7,.9);z-index:500;align-items:center;justify-content:center}
+.settings-overlay.open{display:flex}
+.settings-modal{background:rgba(14,12,9,.99);border:1px solid var(--line2);border-radius:14px;width:94%;max-width:480px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.settings-head{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.settings-head-title{font-family:'Lora',serif;font-size:1rem;color:var(--ink)}
+.settings-body{padding:20px 22px;display:flex;flex-direction:column;gap:18px;max-height:70vh;overflow-y:auto}
+.settings-section{display:flex;flex-direction:column;gap:8px}
+.settings-section-lbl{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.12em;color:var(--amber-s);text-transform:uppercase}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.settings-label{font-size:.76rem;color:var(--soft)}
+.settings-sublabel{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mute);margin-top:1px}
+.settings-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:7px;padding:7px 11px;color:var(--ink);font-family:'DM Mono',monospace;font-size:.68rem;outline:none;transition:border-color .18s}
+.settings-input:focus{border-color:rgba(191,92,34,.35)}
+.settings-input::placeholder{color:var(--mute);opacity:.5}
+.settings-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:.58rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.settings-btn:hover{border-color:var(--amber-s);color:var(--amber-s)}
+.settings-btn.danger{border-color:rgba(180,60,60,.3);color:rgba(200,80,80,.7)}
+.settings-btn.danger:hover{border-color:rgba(200,80,80,.6);color:rgba(220,100,100,.9)}
+.settings-btn.primary{background:var(--amber);border-color:var(--amber);color:white}
+.settings-btn.primary:hover{background:var(--amber-s);border-color:var(--amber-s)}
+.settings-stat{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--ink)}
+.settings-stat span{color:var(--mute)}
+.settings-divider{height:1px;background:var(--line)}
+.settings-msg{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--sage);min-height:16px;text-align:center}
+
+/* key screen */
+#key-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px}
 </style>
 </head>
 <body>
+<canvas id="bg-canvas"></canvas>
+<canvas id="particles-2d"></canvas>
+<canvas id="burst-canvas"></canvas>
+<div class="xp-toast" id="xp-toast"></div>
 
 <!-- KEY SCREEN -->
-<div id="key-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px">
-  <div style="font-family:'Lora',serif;font-size:1.4rem;color:var(--amber-s)">Allie</div>
-  <div style="font-family:'DM Mono',monospace;font-size:.63rem;color:var(--mute);letter-spacing:.08em">paste your anthropic api key to begin</div>
-  <div style="display:flex;gap:8px;width:100%;max-width:420px;padding:0 24px">
+<div id="key-screen">
+  <div style="font-family:'Lora',serif;font-size:1.5rem;color:var(--amber-s)">Allie</div>
+  <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mute);letter-spacing:.08em">paste your anthropic api key to begin</div>
+  <div style="display:flex;gap:8px;width:100%;max-width:400px;padding:0 24px">
     <input id="key-input" type="password" placeholder="sk-ant-..." onkeydown="if(event.key==='Enter')saveKey()"
-      style="flex:1;background:var(--surf2);border:1px solid var(--line2);border-radius:8px;padding:10px 14px;color:var(--ink);font-family:'DM Mono',monospace;font-size:.75rem;outline:none">
-    <button onclick="saveKey()" style="padding:10px 20px;background:var(--amber);border:none;border-radius:8px;color:white;font-family:'DM Mono',monospace;font-size:.7rem;cursor:pointer">go</button>
+      style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:8px;padding:10px 13px;color:var(--ink);font-family:'DM Mono',monospace;font-size:.73rem;outline:none;transition:border-color .2s"
+      onfocus="this.style.borderColor='rgba(191,92,34,.4)'" onblur="this.style.borderColor='var(--line2)'">
+    <button onclick="saveKey()" style="padding:10px 18px;background:var(--amber);border:none;border-radius:8px;color:white;font-family:'DM Mono',monospace;font-size:.66rem;cursor:pointer">go</button>
   </div>
-  <div id="key-err" style="font-family:'DM Mono',monospace;font-size:.6rem;color:#c0392b;min-height:14px"></div>
-  <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mute);max-width:340px;text-align:center;line-height:1.9">
-    stored in your browser only — never sent anywhere except anthropic directly.<br>get a key at console.anthropic.com
-  </div>
+  <div id="key-err" style="font-family:'DM Mono',monospace;font-size:.57rem;color:#c0392b;min-height:14px;text-align:center"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute);max-width:280px;text-align:center;line-height:1.9;opacity:.7">stored in your browser only<br>console.anthropic.com to get one</div>
 </div>
 
-<div class="topbar">
-  <div class="wordmark">Allie <small>/ taku's workspace</small></div>
+<!-- TOPBAR -->
+<div class="topbar" id="topbar" style="display:none">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+    <div class="wordmark" onclick="openSettings()">Allie <small>/ taku's</small></div>
+  </div>
   <div class="top-nav">
     <button class="top-btn active" onclick="switchView('chat',this)">home</button>
     <button class="top-btn" onclick="switchView('pulse',this)">weekly</button>
     <button class="top-btn" onclick="switchView('poems',this)">lbls</button>
-    <button class="top-btn" onclick="switchView('skills',this)">skills lab</button>
+    <button class="top-btn" onclick="switchView('skills',this)">skills</button>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <button onclick="clearKey()" title="change api key" style="background:transparent;border:1px solid var(--line2);border-radius:5px;color:var(--mute);font-family:'DM Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--soft)'" onmouseout="this.style.color='var(--mute)'">key</button>
-    <div class="pulse" title="alive"></div>
+  <div class="topbar-right">
+    <div class="streak"><span class="streak-flame">🔥</span><span id="streak-count">0</span></div>
+    <div class="xp-badge" id="xp-display">0 xp</div>
+    <div class="live-dot"></div>
   </div>
 </div>
 
-<div class="body">
-  <div class="sidebar">
+<div class="sidebar-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
 
+<!-- APP BODY -->
+<div class="app-body" id="app-body" style="display:none">
+  <div class="sidebar" id="sidebar">
     <div class="today-panel">
       <div class="today-lbl">Today</div>
       <div class="today-field">
         <div class="today-q">weather inside me</div>
-        <textarea class="today-input" placeholder="…" rows="1" oninput="saveTodayField('weather',this.value);resize(this)"></textarea>
+        <textarea class="today-input" placeholder="…" rows="1" oninput="saveTodayField('weather',this.value);resize(this);awardDailyCheck()"></textarea>
       </div>
       <div class="today-field">
         <div class="today-q">one thing that has to happen</div>
@@ -270,825 +336,795 @@ textarea::placeholder{color:var(--mute);font-style:italic}
       </div>
     </div>
 
+    <div class="xp-section">
+      <div class="sb-lbl">Progress</div>
+      <div class="xp-bar-wrap"><div class="xp-bar-fill" id="sb-xp-bar" style="width:0%"></div></div>
+      <div class="xp-meta"><span id="sb-xp-label">Level 1 · Seedling</span><span id="sb-xp-next">0 / 100 xp</span></div>
+    </div>
+
     <div class="sb-sec">
       <div class="sb-lbl">Mode</div>
-      <div class="sb-item active" onclick="setMode('think',this)">
-        <span class="sb-icon">◎</span>
-        <div><div class="sb-name">Think</div><div class="sb-sub">explore · connect</div></div>
-      </div>
-      <div class="sb-item" onclick="setMode('write',this)">
-        <span class="sb-icon">✦</span>
-        <div><div class="sb-name">Write</div><div class="sb-sub">draft · voice</div></div>
-      </div>
-      <div class="sb-item" onclick="setMode('challenge',this)">
-        <span class="sb-icon">⚡</span>
-        <div><div class="sb-name">Challenge</div><div class="sb-sub">pressure test · gaps</div></div>
-      </div>
-      <div class="sb-item" onclick="setMode('edit',this)">
-        <span class="sb-icon">◈</span>
-        <div><div class="sb-name">Edit</div><div class="sb-sub">LBLS method · craft</div></div>
-      </div>
-      <div class="sb-item" onclick="setMode('build',this)">
-        <span class="sb-icon">⬡</span>
-        <div><div class="sb-name">Build</div><div class="sb-sub">stack · ship</div></div>
-      </div>
+      <div class="sb-item active" onclick="setMode('think',this)"><span class="sb-icon">◎</span><div><div class="sb-name">Think</div><div class="sb-sub">explore · connect</div></div></div>
+      <div class="sb-item" onclick="setMode('write',this)"><span class="sb-icon">✦</span><div><div class="sb-name">Write</div><div class="sb-sub">draft · voice</div></div></div>
+      <div class="sb-item" onclick="setMode('challenge',this)"><span class="sb-icon">⚡</span><div><div class="sb-name">Challenge</div><div class="sb-sub">pressure test · gaps</div></div></div>
+      <div class="sb-item" onclick="setMode('edit',this)"><span class="sb-icon">◈</span><div><div class="sb-name">Edit</div><div class="sb-sub">LBLS method · craft</div></div></div>
+      <div class="sb-item" onclick="setMode('build',this)"><span class="sb-icon">⬡</span><div><div class="sb-name">Build</div><div class="sb-sub">stack · ship</div></div></div>
     </div>
 
     <div class="sb-sec">
       <div class="sb-lbl">Context</div>
-      <div class="sb-item active" onclick="setCtx(this,'full')">
-        <div class="sb-dot" style="background:#bf5c22"></div>
-        <div><div class="sb-name">Full Stack</div><div class="sb-sub">everything</div></div>
-      </div>
-      <div class="sb-item" onclick="setCtx(this,'nursara')">
-        <div class="sb-dot" style="background:#567a62"></div>
-        <div><div class="sb-name">NurSara</div><div class="sb-sub">voice → clinical</div></div>
-      </div>
-      <div class="sb-item" onclick="setCtx(this,'sasce')">
-        <div class="sb-dot" style="background:#7a6a9a"></div>
-        <div><div class="sb-name">Sasce</div><div class="sb-sub">wellness · private</div></div>
-      </div>
-      <div class="sb-item" onclick="setCtx(this,'lbls')">
-        <div class="sb-dot" style="background:#8a6a5a"></div>
-        <div><div class="sb-name">Lost But Loving Still</div><div class="sb-sub">manuscript</div></div>
-      </div>
-      <div class="sb-item" onclick="setCtx(this,'thaw')">
-        <div class="sb-dot" style="background:#486878"></div>
-        <div><div class="sb-name">THAW / PIE</div><div class="sb-sub">creative · dots</div></div>
-      </div>
-      <div class="sb-item" onclick="setCtx(this,'school')">
-        <div class="sb-dot" style="background:#6a7a5a"></div>
-        <div><div class="sb-name">School</div><div class="sb-sub">pflege · exams</div></div>
-      </div>
+      <div class="sb-item active" onclick="setCtx(this,'full')"><div class="sb-dot" style="background:#bf5c22"></div><div><div class="sb-name">Full Stack</div><div class="sb-sub">everything</div></div></div>
+      <div class="sb-item" onclick="setCtx(this,'nursara')"><div class="sb-dot" style="background:#567a62"></div><div><div class="sb-name">NurSara</div><div class="sb-sub">voice → clinical</div></div></div>
+      <div class="sb-item" onclick="setCtx(this,'sasce')"><div class="sb-dot" style="background:#7a6a9a"></div><div><div class="sb-name">Sasce</div><div class="sb-sub">wellness · private</div></div></div>
+      <div class="sb-item" onclick="setCtx(this,'lbls')"><div class="sb-dot" style="background:#8a6a5a"></div><div><div class="sb-name">Lost But Loving Still</div><div class="sb-sub">manuscript</div></div></div>
+      <div class="sb-item" onclick="setCtx(this,'thaw')"><div class="sb-dot" style="background:#486878"></div><div><div class="sb-name">THAW / PIE</div><div class="sb-sub">creative · dots</div></div></div>
+      <div class="sb-item" onclick="setCtx(this,'school')"><div class="sb-dot" style="background:#6a7a5a"></div><div><div class="sb-name">School</div><div class="sb-sub">pflege · exams</div></div></div>
     </div>
 
     <div class="sb-sec" style="border:none;flex:1">
       <div class="sb-lbl">A³I</div>
       <div class="sb-tagline">"AGI competes for the horizon. A³I returns something to the person standing right here."</div>
+      <div style="margin-top:14px">
+        <button onclick="openSettings()" style="width:100%;background:var(--glow);border:1px solid rgba(191,92,34,.2);border-radius:7px;color:var(--amber-s);font-family:'DM Mono',monospace;font-size:.56rem;padding:7px;cursor:pointer;transition:all .18s;letter-spacing:.04em" onmouseover="this.style.background='var(--dim)'" onmouseout="this.style.background='var(--glow)'">⚙ settings</button>
+      </div>
     </div>
-
   </div>
 
   <div class="content">
-
-    <!-- HOME CHAT -->
+    <!-- HOME -->
     <div class="view active" id="view-chat">
       <div class="feed" id="feed">
         <div class="welcome" id="welcome">
           <div class="welcome-mark">A</div>
-          <div class="welcome-title">Hey Taku. What's on your mind?</div>
-          <div class="welcome-body">I'm a version of you who's already done the work — here to think alongside you, not ahead of you. Full context loaded. Pick up wherever you left off.</div>
+          <div class="welcome-title">Hey Taku. What's alive?</div>
+          <div class="welcome-body">A version of you who's already done the work. Full context loaded.</div>
           <div class="chips">
-            <button class="chip" onclick="quick('What should I actually focus on today across all my projects?')">Where to focus</button>
-            <button class="chip" onclick="quick('I have a new idea — help me think it through before I get attached.')">New idea</button>
-            <button class="chip" onclick="quick('Realistic 90-day picture across NurSara and Sasce?')">90-day check</button>
-            <button class="chip" onclick="quick('I need to write something. Help me find the voice first.')">Find the voice</button>
-            <button class="chip" onclick="quick('What am I missing or quietly avoiding right now?')">What am I avoiding?</button>
-            <button class="chip" onclick="quick('Talk to me about NurSara MVP — what is the actual next step to ship something.')">NurSara next step</button>
+            <button class="chip" onclick="quick('What should I actually focus on today?')">Where to focus</button>
+            <button class="chip" onclick="quick('New idea — help me think it through.')">New idea</button>
+            <button class="chip" onclick="quick('90-day picture across NurSara and Sasce?')">90-day check</button>
+            <button class="chip" onclick="quick('I need to write something. Help me find the voice.')">Find the voice</button>
+            <button class="chip" onclick="quick('What am I quietly avoiding right now?')">What am I avoiding?</button>
+            <button class="chip" onclick="quick('NurSara MVP — what is the actual next step to ship.')">NurSara next step</button>
             <button class="chip" onclick="quick('I want to work on LBLS today. Where were we?')">LBLS session</button>
-            <button class="chip" onclick="quick('Pflege exam prep — I need to study Peak-Flow-Messung. Go.')">Exam prep</button>
+            <button class="chip" onclick="quick('Pflege exam prep — Peak-Flow-Messung. Go.')">Exam prep</button>
           </div>
         </div>
       </div>
       <div class="input-wrap">
         <div class="input-row">
-          <textarea id="main-ta" placeholder="Think out loud…" rows="1"
-            onkeydown="mainKey(event)" oninput="resize(this)"></textarea>
+          <textarea id="main-ta" placeholder="Think out loud…" rows="1" onkeydown="mainKey(event)" oninput="resize(this)"></textarea>
           <button class="send" id="main-send" onclick="sendMain()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
         <div class="input-foot">
           <span class="input-hint">↵ send · shift+↵ newline</span>
           <div class="foot-r">
-            <button class="fresh" onclick="freshStart()">↺ fresh start</button>
+            <button class="fresh" onclick="freshStart()">↺ fresh</button>
             <span class="badge" id="mode-badge">think · full stack</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- WEEKLY PULSE -->
+    <!-- WEEKLY -->
     <div class="view" id="view-pulse">
       <div class="pulse-view">
-        <div class="pulse-hero">
-          <h1>This Week's Pulse</h1>
-          <p>Not a to-do list. A temperature check. Fill what you know, leave what you don't.</p>
-        </div>
+        <div class="section-hero"><h1>This Week's Pulse</h1><p>Not a to-do list. A temperature check.</p></div>
         <div class="pulse-grid">
-          <div class="pulse-card">
-            <div class="pulse-card-lbl">What's alive right now</div>
-            <textarea class="pulse-ta" placeholder="things buzzing, things unresolved, things you keep coming back to…" oninput="savePulse('alive',this.value)"></textarea>
-          </div>
-          <div class="pulse-card">
-            <div class="pulse-card-lbl">What's draining</div>
-            <textarea class="pulse-ta" placeholder="be honest. no one's grading this." oninput="savePulse('drain',this.value)"></textarea>
-          </div>
-          <div class="pulse-card">
-            <div class="pulse-card-lbl">Body check</div>
-            <textarea class="pulse-ta" placeholder="back? sleep? supplements? padel?" oninput="savePulse('body',this.value)"></textarea>
-          </div>
-          <div class="pulse-card">
-            <div class="pulse-card-lbl">What's restoring me</div>
-            <textarea class="pulse-ta" placeholder="even small things count." oninput="savePulse('restore',this.value)"></textarea>
-          </div>
+          <div class="pulse-card"><div class="pulse-card-lbl">What's alive right now</div><textarea class="pulse-ta" placeholder="things buzzing, things unresolved…" oninput="savePulse('alive',this.value)"></textarea></div>
+          <div class="pulse-card"><div class="pulse-card-lbl">What's draining</div><textarea class="pulse-ta" placeholder="be honest. no one's grading this." oninput="savePulse('drain',this.value)"></textarea></div>
+          <div class="pulse-card"><div class="pulse-card-lbl">Body check</div><textarea class="pulse-ta" placeholder="back? sleep? supplements? padel?" oninput="savePulse('body',this.value)"></textarea></div>
+          <div class="pulse-card"><div class="pulse-card-lbl">What's restoring me</div><textarea class="pulse-ta" placeholder="even small things count." oninput="savePulse('restore',this.value)"></textarea></div>
         </div>
         <div class="pulse-divider"></div>
         <div class="pulse-section-lbl">Project Pulse</div>
-        <div class="project-status-row">
-          <div class="ps-dot" style="background:#567a62"></div>
-          <div class="ps-name">NurSara</div>
-          <input class="ps-input" placeholder="where is it this week?" oninput="savePulse('nursara_status',this.value)">
-        </div>
-        <div class="project-status-row">
-          <div class="ps-dot" style="background:#7a6a9a"></div>
-          <div class="ps-name">Sasce</div>
-          <input class="ps-input" placeholder="where is it this week?" oninput="savePulse('sasce_status',this.value)">
-        </div>
-        <div class="project-status-row">
-          <div class="ps-dot" style="background:#8a6a5a"></div>
-          <div class="ps-name">Lost But Loving Still</div>
-          <input class="ps-input" placeholder="where is it this week?" oninput="savePulse('lbls_status',this.value)">
-        </div>
-        <div class="project-status-row">
-          <div class="ps-dot" style="background:#486878"></div>
-          <div class="ps-name">THAW / PIE</div>
-          <input class="ps-input" placeholder="where is it this week?" oninput="savePulse('thaw_status',this.value)">
-        </div>
-        <div class="project-status-row">
-          <div class="ps-dot" style="background:#6a7a5a"></div>
-          <div class="ps-name">School / Pflege</div>
-          <input class="ps-input" placeholder="next exam? gut feeling?" oninput="savePulse('school_status',this.value)">
-        </div>
+        <div class="project-status-row"><div class="ps-dot" style="background:#567a62"></div><div class="ps-name">NurSara</div><input class="ps-input" placeholder="this week?" oninput="savePulse('ns',this.value)"></div>
+        <div class="project-status-row"><div class="ps-dot" style="background:#7a6a9a"></div><div class="ps-name">Sasce</div><input class="ps-input" placeholder="this week?" oninput="savePulse('sa',this.value)"></div>
+        <div class="project-status-row"><div class="ps-dot" style="background:#8a6a5a"></div><div class="ps-name">Lost But Loving Still</div><input class="ps-input" placeholder="this week?" oninput="savePulse('lb',this.value)"></div>
+        <div class="project-status-row"><div class="ps-dot" style="background:#486878"></div><div class="ps-name">THAW / PIE</div><input class="ps-input" placeholder="this week?" oninput="savePulse('th',this.value)"></div>
+        <div class="project-status-row"><div class="ps-dot" style="background:#6a7a5a"></div><div class="ps-name">School / Pflege</div><input class="ps-input" placeholder="next exam?" oninput="savePulse('sc',this.value)"></div>
       </div>
     </div>
 
-    <!-- LBLS POEM TRACKER -->
+    <!-- LBLS -->
     <div class="view" id="view-poems">
       <div class="poem-view">
-        <div class="poem-hero">
-          <h1>Lost But Loving Still</h1>
-          <p>~52–58 poems. 3 acts + 2 intermissions + epilogue. Final editorial stages. Click any poem to go deep with Allie on it.</p>
+        <div class="section-hero"><h1>Lost But Loving Still</h1><p>~52–58 poems · final editorial stages · tap any poem to go deep</p></div>
+        <div class="lbls-progress">
+          <div class="lbls-bar-wrap"><div class="lbls-bar-fill" style="width:32%"></div></div>
+          <div class="lbls-meta">7 strong · 11 to revise · 2 locked · Intermission I needs writing</div>
         </div>
-
         <div class="act-block">
           <div class="act-title">Act I — What Broke</div>
-          <div class="poem-row" onclick="openPoem('Family Group Chat','Act I','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">Family Group Chat</div>
-            <span class="poem-act-tag">I</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Gogo','Act I','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">Gogo</div>
-            <span class="poem-act-tag">I</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Inheritance Tax','Act I','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Inheritance Tax</div>
-            <span class="poem-act-tag">I</span>
-            <span class="poem-state">needs work</span>
-          </div>
+          <div class="poem-row" onclick="openPoem('Family Group Chat','Act I','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">Family Group Chat</div><span class="poem-act-tag">I</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('Gogo','Act I','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">Gogo</div><span class="poem-act-tag">I</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('Inheritance Tax','Act I','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Inheritance Tax</div><span class="poem-act-tag">I</span><span class="poem-state">revise</span></div>
         </div>
-
-        <div class="intermission">
-          <div class="intermission-lbl">Intermission I</div>
-          <div class="intermission-note">needs writing — 4–6 lines, single image. Click to draft with Allie.</div>
-        </div>
-
-        <div class="act-block" style="margin-top:16px">
+        <div class="intermission" onclick="openPoem('Intermission I','Between Acts I and II','needs writing — 4-6 lines, single image')"><div class="intermission-lbl">Intermission I</div><div class="intermission-note">needs writing — 4–6 lines, single image. Tap to draft with Allie.</div></div>
+        <div class="act-block" style="margin-top:13px">
           <div class="act-title">Act II — What I Chose</div>
-          <div class="poem-row" onclick="openPoem('Kunyeperwa NePasiport','Act II','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">Kunyeperwa NePasiport</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('After The Nightshift','Act II','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">After The Nightshift</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('For Men Like Me','Act II','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">For Men Like Me</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Drought Wintering Cup','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Drought Wintering Cup</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Enemy To Many','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Enemy To Many</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Clocking Out Clocking In','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Clocking Out Clocking In</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Green Spine','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Green Spine</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Trust Fall','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Trust Fall</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('New Map','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">New Map</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Voice Notes','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Voice Notes</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Forever Is A Risky Word','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Forever Is A Risky Word</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Curriculum For Tenderness','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Curriculum For Tenderness</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('Ordinary Skin','Act II','revise')">
-            <div class="poem-status" style="background:#bf5c22"></div>
-            <div class="poem-title">Ordinary Skin</div>
-            <span class="poem-act-tag">II</span>
-            <span class="poem-state">needs work</span>
-          </div>
+          <div class="poem-row" onclick="openPoem('Kunyeperwa NePasiport','Act II','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">Kunyeperwa NePasiport</div><span class="poem-act-tag">II</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('After The Nightshift','Act II','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">After The Nightshift</div><span class="poem-act-tag">II</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('For Men Like Me','Act II','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">For Men Like Me</div><span class="poem-act-tag">II</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('Drought Wintering Cup','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Drought Wintering Cup</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Enemy To Many','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Enemy To Many</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Clocking Out Clocking In','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Clocking Out Clocking In</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Green Spine','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Green Spine</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Trust Fall','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Trust Fall</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('New Map','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">New Map</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Voice Notes','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Voice Notes</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Forever Is A Risky Word','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Forever Is A Risky Word</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Curriculum For Tenderness','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Curriculum For Tenderness</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
+          <div class="poem-row" onclick="openPoem('Ordinary Skin','Act II','needs revision')"><div class="poem-status" style="background:#bf5c22"></div><div class="poem-title">Ordinary Skin</div><span class="poem-act-tag">II</span><span class="poem-state">revise</span></div>
         </div>
-
-        <div class="intermission">
-          <div class="intermission-lbl">Intermission II</div>
-          <div class="intermission-note">2–3 lines, fragments exist. Click to work with Allie.</div>
+        <div class="intermission" onclick="openPoem('Intermission II','Between Acts II and III','2-3 lines, fragments exist')"><div class="intermission-lbl">Intermission II</div><div class="intermission-note">2–3 lines, fragments exist. Tap to work with Allie.</div></div>
+        <div class="act-block" style="margin-top:13px">
+          <div class="act-title">Act III — What Remains (8 max)</div>
+          <div class="poem-row" onclick="openPoem('With the Lights On','Act III','strong')"><div class="poem-status" style="background:#567a62"></div><div class="poem-title">With the Lights On</div><span class="poem-act-tag">III</span><span class="poem-state">strong</span></div>
+          <div class="poem-row" onclick="openPoem('We Don\'t Say I Love You Like That','Act III — closer','locked')"><div class="poem-status" style="background:#b89a6e"></div><div class="poem-title">We Don't Say I Love You Like That</div><span class="poem-act-tag">III closer</span><span class="poem-locked">✓ locked</span></div>
         </div>
-
-        <div class="act-block" style="margin-top:16px">
-          <div class="act-title">Act III — What Remains (8 poems max)</div>
-          <div class="poem-row" onclick="openPoem('With the Lights On','Act III','strong')">
-            <div class="poem-status" style="background:#567a62"></div>
-            <div class="poem-title">With the Lights On</div>
-            <span class="poem-act-tag">III</span>
-            <span class="poem-state">strong</span>
-          </div>
-          <div class="poem-row" onclick="openPoem('We Don\'t Say I Love You Like That','Act III — closer','locked')">
-            <div class="poem-status" style="background:#b89a6e"></div>
-            <div class="poem-title">We Don't Say I Love You Like That</div>
-            <span class="poem-act-tag">III closer</span>
-            <span class="poem-locked">✓ locked</span>
-          </div>
-        </div>
-
         <div class="act-block">
           <div class="act-title">Epilogue</div>
-          <div class="poem-row" onclick="openPoem('Epilogue','Epilogue','locked')">
-            <div class="poem-status" style="background:#b89a6e"></div>
-            <div class="poem-title">Epilogue</div>
-            <span class="poem-act-tag">epilogue</span>
-            <span class="poem-locked">stays</span>
-          </div>
+          <div class="poem-row" onclick="openPoem('Epilogue','Epilogue','stays')"><div class="poem-status" style="background:#b89a6e"></div><div class="poem-title">Epilogue</div><span class="poem-act-tag">epilogue</span><span class="poem-locked">stays</span></div>
         </div>
-
       </div>
     </div>
 
-    <!-- SKILLS LAB -->
+    <!-- SKILLS -->
     <div class="view" id="view-skills">
       <div class="skills-scroll">
-        <div class="skills-hero">
-          <h1>Skills Lab</h1>
-          <p>Knowledge tied directly to what you're building — not a course, not a curriculum. Click any card and we go deep together, right now, in context.</p>
-        </div>
+        <div class="section-hero"><h1>Skills Lab</h1><p>Knowledge tied to what you're building. Click any card and we go deep together.</p></div>
         <div id="skills-body"></div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- MODAL (skill or poem) -->
+<!-- SKILL / POEM MODAL -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-head">
-      <div>
-        <div class="modal-title" id="m-title">—</div>
-        <div class="modal-sub" id="m-sub">—</div>
-      </div>
+      <div><div class="modal-title" id="m-title">—</div><div class="modal-sub" id="m-sub">—</div></div>
       <button class="modal-x" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-feed" id="m-feed"></div>
     <div class="modal-foot">
-      <textarea class="modal-ta" id="m-ta" placeholder="Go deeper, paste the poem, ask anything…"
-        rows="1" onkeydown="modalKey(event)" oninput="resize(this)"></textarea>
+      <textarea class="modal-ta" id="m-ta" placeholder="Go deeper, paste the poem, ask anything…" rows="1" onkeydown="modalKey(event)" oninput="resize(this)"></textarea>
       <button class="modal-send" id="m-send" onclick="sendModal()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="settings-overlay" id="settings-overlay" onclick="e=>e.target===this&&closeSettings()">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <div class="settings-head">
+      <div class="settings-head-title">Settings</div>
+      <button class="modal-x" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+
+      <div class="settings-section">
+        <div class="settings-section-lbl">API Key</div>
+        <div class="settings-row">
+          <div><div class="settings-label">Anthropic API Key</div><div class="settings-sublabel">stored in browser localStorage only</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input type="password" id="settings-key-input" class="settings-input" placeholder="sk-ant-..." style="flex:1">
+          <button class="settings-btn primary" onclick="updateKeyFromSettings()">save</button>
+        </div>
+        <div id="settings-key-status" class="settings-msg"></div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section">
+        <div class="settings-section-lbl">Progress & Streaks</div>
+        <div class="settings-row">
+          <div><div class="settings-label">Current XP</div><div class="settings-sublabel">earned through real interactions</div></div>
+          <div class="settings-stat" id="settings-xp-stat">0 xp</div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Current Streak</div><div class="settings-sublabel">consecutive days opened</div></div>
+          <div class="settings-stat" id="settings-streak-stat">0 days</div>
+        </div>
+        <div class="settings-row" style="margin-top:6px">
+          <button class="settings-btn danger" onclick="resetStreak()">reset streak</button>
+          <button class="settings-btn danger" onclick="resetXP()">reset xp</button>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section">
+        <div class="settings-section-lbl">Appearance</div>
+        <div class="settings-row">
+          <div><div class="settings-label">Background particles</div><div class="settings-sublabel">3D + 2D ambient field</div></div>
+          <button class="settings-btn" id="particles-toggle" onclick="toggleParticles()">on</button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Response burst</div><div class="settings-sublabel">particle burst on Allie reply</div></div>
+          <button class="settings-btn" id="burst-toggle" onclick="toggleBurst()">on</button>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section">
+        <div class="settings-section-lbl">About</div>
+        <div style="font-size:.72rem;color:var(--mute);line-height:1.9">
+          Allie v4 · Built by Takunda Zanga<br>
+          Powered by Claude (Anthropic)<br>
+          Deployed on Vercel · Part of A³I<br><br>
+          <span style="color:var(--amber-s);font-family:'DM Mono',monospace;font-size:.6rem">"AGI competes for the horizon.<br>A³I returns something to the person<br>standing right here."</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script>
-// ── API KEY ────────────────────────────────────────────────────
+// ── API KEY ──────────────────────────────────────────────────────
 let API_KEY = localStorage.getItem('allie_key') || '';
+let particlesOn = true, burstOn = true;
 
-function checkKey() {
-  if (!API_KEY) {
-    document.getElementById('key-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
+function checkKey(){
+  const ks = document.getElementById('key-screen');
+  const tb = document.getElementById('topbar');
+  const ab = document.getElementById('app-body');
+  if(!API_KEY){
+    ks.style.display='flex'; tb.style.display='none'; ab.style.display='none';
   } else {
-    document.getElementById('key-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'flex';
+    ks.style.display='none'; tb.style.display='flex'; ab.style.display='flex';
+    initStreak(); updateGameUI();
   }
 }
 
-function saveKey() {
+function saveKey(){
   const val = document.getElementById('key-input').value.trim();
-  if (!val.startsWith('sk-ant-')) {
-    document.getElementById('key-err').textContent = 'That doesn\'t look right — should start with sk-ant-';
-    return;
+  if(!val.startsWith('sk-ant-')){
+    document.getElementById('key-err').textContent='should start with sk-ant-'; return;
   }
-  API_KEY = val;
-  localStorage.setItem('allie_key', val);
+  API_KEY=val; localStorage.setItem('allie_key',val);
+  document.getElementById('key-err').textContent='';
   checkKey();
 }
 
-function clearKey() {
-  API_KEY = '';
-  localStorage.removeItem('allie_key');
-  checkKey();
+function clearKey(){ API_KEY=''; localStorage.removeItem('allie_key'); checkKey(); }
+
+function updateKeyFromSettings(){
+  const val = document.getElementById('settings-key-input').value.trim();
+  if(!val.startsWith('sk-ant-')){
+    document.getElementById('settings-key-status').textContent='should start with sk-ant-';
+    document.getElementById('settings-key-status').style.color='#c0392b'; return;
+  }
+  API_KEY=val; localStorage.setItem('allie_key',val);
+  document.getElementById('settings-key-status').textContent='saved ✓';
+  document.getElementById('settings-key-status').style.color='var(--sage)';
+  setTimeout(()=>document.getElementById('settings-key-status').textContent='', 2000);
 }
 
-// ── STATE ──────────────────────────────────────────────────────
+// ── SETTINGS ────────────────────────────────────────────────────
+function openSettings(){
+  document.getElementById('settings-overlay').classList.add('open');
+  document.getElementById('settings-xp-stat').textContent = xp+' xp';
+  document.getElementById('settings-streak-stat').textContent = streak+' days';
+  const ki = document.getElementById('settings-key-input');
+  if(API_KEY) ki.placeholder='••••••••••••••••';
+}
+function closeSettings(){ document.getElementById('settings-overlay').classList.remove('open'); }
+
+function resetStreak(){ streak=0; localStorage.setItem('allie_streak','0'); updateGameUI(); document.getElementById('settings-streak-stat').textContent='0 days'; }
+function resetXP(){ xp=0; localStorage.setItem('allie_xp','0'); updateGameUI(); document.getElementById('settings-xp-stat').textContent='0 xp'; }
+
+function toggleParticles(){
+  particlesOn=!particlesOn;
+  document.getElementById('particles-toggle').textContent=particlesOn?'on':'off';
+  document.getElementById('bg-canvas').style.opacity=particlesOn?'0.6':'0';
+  document.getElementById('particles-2d').style.opacity=particlesOn?'1':'0';
+}
+function toggleBurst(){
+  burstOn=!burstOn;
+  document.getElementById('burst-toggle').textContent=burstOn?'on':'off';
+}
+
+document.getElementById('settings-overlay').addEventListener('click', function(e){
+  if(e.target===this) closeSettings();
+});
+
+// ── 3D BG ────────────────────────────────────────────────────────
+function initBg(){
+  try{
+    const canvas=document.getElementById('bg-canvas');
+    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+    camera.position.z=5;
+    const geo=new THREE.BufferGeometry();
+    const count=600;
+    const pos=new Float32Array(count*3);
+    for(let i=0;i<count*3;i++) pos[i]=(Math.random()-.5)*16;
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const mat=new THREE.PointsMaterial({color:0xbf5c22,size:0.02,transparent:true,opacity:0.3});
+    const particles=new THREE.Points(geo,mat);
+    scene.add(particles);
+    const sGeo=new THREE.SphereGeometry(2.8,24,24);
+    const sMat=new THREE.MeshBasicMaterial({color:0x2a0e04,transparent:true,opacity:0.05,wireframe:true});
+    scene.add(new THREE.Mesh(sGeo,sMat));
+    let mouse={x:0,y:0};
+    document.addEventListener('mousemove',e=>{mouse.x=(e.clientX/window.innerWidth-.5)*.35;mouse.y=-(e.clientY/window.innerHeight-.5)*.35;});
+    window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+    let t=0;
+    (function animate(){
+      requestAnimationFrame(animate); t+=.003;
+      particles.rotation.y=t*.1; particles.rotation.x=t*.05;
+      camera.position.x+=(mouse.x-camera.position.x)*.025;
+      camera.position.y+=(mouse.y-camera.position.y)*.025;
+      renderer.render(scene,camera);
+    })();
+  }catch(e){ console.log('3D bg unavailable'); }
+}
+
+// ── 2D PARTICLES ─────────────────────────────────────────────────
+function init2D(){
+  const canvas=document.getElementById('particles-2d');
+  const ctx=canvas.getContext('2d');
+  let W=canvas.width=window.innerWidth, H=canvas.height=window.innerHeight;
+  window.addEventListener('resize',()=>{ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; });
+  const pts=[];
+  const colors=['rgba(191,92,34,','rgba(184,154,110,','rgba(86,122,98,','rgba(72,104,120,'];
+  for(let i=0;i<120;i++){
+    pts.push({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25,
+      r:Math.random()*1.8+.4,
+      op:Math.random()*.18+.04,
+      c:colors[Math.floor(Math.random()*colors.length)],
+      pulse:Math.random()*Math.PI*2,
+      pulseSpeed:Math.random()*.01+.005
+    });
+  }
+  (function loop(){
+    requestAnimationFrame(loop);
+    if(!particlesOn){ ctx.clearRect(0,0,W,H); return; }
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.pulse+=p.pulseSpeed;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      const alpha=p.op*(0.7+0.3*Math.sin(p.pulse));
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,Math.max(0.1,p.r),0,Math.PI*2);
+      ctx.fillStyle=p.c+alpha+')';
+      ctx.fill();
+    });
+    // draw subtle connections
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<90){
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x,pts[i].y);
+          ctx.lineTo(pts[j].x,pts[j].y);
+          ctx.strokeStyle='rgba(191,92,34,'+(0.04*(1-dist/90))+')';
+          ctx.lineWidth=0.5;
+          ctx.stroke();
+        }
+      }
+    }
+  })();
+}
+
+// ── BURST ────────────────────────────────────────────────────────
+function burst(){
+  if(!burstOn) return;
+  const canvas=document.getElementById('burst-canvas');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const feed=document.getElementById('feed');
+  const last=feed.lastElementChild;
+  let cx=window.innerWidth*.65, cy=window.innerHeight*.6;
+  if(last){ const r=last.getBoundingClientRect(); cx=r.left+r.width*.4; cy=r.top+10; }
+  const ps=[];
+  for(let i=0;i<32;i++){
+    const a=Math.random()*Math.PI*2, s=Math.random()*2.5+.8;
+    ps.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,r:Math.max(.1,Math.random()*2.5+.5),
+      color:`hsl(${18+Math.random()*28},75%,${48+Math.random()*18}%)`});
+  }
+  let frame=0;
+  (function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ps.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=.06; p.life-=.032;
+      const r=Math.max(0.01, p.r*p.life); // FIXED: clamp radius
+      ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
+      ctx.fillStyle=p.color; ctx.globalAlpha=Math.max(0,p.life*.65); ctx.fill();
+    });
+    ctx.globalAlpha=1; frame++;
+    if(frame<65) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  })();
+}
+
+// ── GAMIFICATION ────────────────────────────────────────────────
+let xp=parseInt(localStorage.getItem('allie_xp')||'0');
+let streak=parseInt(localStorage.getItem('allie_streak')||'0');
+let lastOpen=localStorage.getItem('allie_last_open')||'';
+let dailyCheckAwarded=localStorage.getItem('allie_daily_check')===new Date().toDateString();
+
+// XP values — tied to real actions
+const XP = {
+  REAL_RESPONSE: 5,       // got a meaningful reply (base)
+  LONG_EXCHANGE: 3,       // bonus if history > 4 turns
+  SKILL_SESSION: 5,       // opened and received skill teaching
+  POEM_SESSION: 7,        // opened and received poem editorial
+  DAILY_CHECK: 4,         // filled today's check-in (once per day)
+  STREAK_BONUS: 2,        // on top, per streak milestone
+};
+const XP_PER_LEVEL=100;
+const LEVEL_NAMES=['Seedling','Scribe','Builder','Architect','Sage'];
+
+function initStreak(){
+  const today=new Date().toDateString();
+  if(lastOpen===today) return;
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  streak = lastOpen===yesterday ? streak+1 : 1;
+  lastOpen=today;
+  localStorage.setItem('allie_streak',streak);
+  localStorage.setItem('allie_last_open',today);
+}
+
+function addXP(amount, label){
+  if(amount<=0) return;
+  xp+=amount; localStorage.setItem('allie_xp',xp);
+  updateGameUI();
+  showXPToast('+'+(amount)+' xp'+(label?' · '+label:''));
+  burst();
+}
+
+function awardDailyCheck(){
+  const today=new Date().toDateString();
+  if(localStorage.getItem('allie_daily_check')===today) return;
+  localStorage.setItem('allie_daily_check',today);
+  setTimeout(()=>addXP(XP.DAILY_CHECK,'daily check-in'),800);
+}
+
+function updateGameUI(){
+  const level=Math.floor(xp/XP_PER_LEVEL)+1;
+  const levelXP=xp%XP_PER_LEVEL;
+  const pct=(levelXP/XP_PER_LEVEL)*100;
+  const name=LEVEL_NAMES[Math.min(level-1,LEVEL_NAMES.length-1)];
+  document.getElementById('xp-display').textContent=xp+' xp';
+  document.getElementById('streak-count').textContent=streak;
+  const bar=document.getElementById('sb-xp-bar');
+  if(bar) bar.style.width=pct+'%';
+  const lbl=document.getElementById('sb-xp-label');
+  if(lbl) lbl.textContent='Lv.'+level+' · '+name;
+  const nxt=document.getElementById('sb-xp-next');
+  if(nxt) nxt.textContent=levelXP+' / '+XP_PER_LEVEL+' xp';
+}
+
+function showXPToast(msg){
+  const t=document.getElementById('xp-toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ── SIDEBAR ──────────────────────────────────────────────────────
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const bd=document.getElementById('sb-backdrop');
+  const hb=document.getElementById('hamburger');
+  const open=sb.classList.toggle('open');
+  bd.classList.toggle('open',open);
+  hb.classList.toggle('open',open);
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-backdrop').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+// ── STATE ────────────────────────────────────────────────────────
 let mode='think', ctx='full';
 let history=[], skillHistory=[];
 let currentModal=null, busy=false, skillBusy=false;
-let todayData = JSON.parse(localStorage.getItem('allie_today')||'{}');
-let pulseData = JSON.parse(localStorage.getItem('allie_pulse')||'{}');
+let todayData=JSON.parse(localStorage.getItem('allie_today')||'{}');
+let pulseData=JSON.parse(localStorage.getItem('allie_pulse')||'{}');
 
-// ── TODAY PERSISTENCE ──────────────────────────────────────────
 function saveTodayField(k,v){ todayData[k]=v; localStorage.setItem('allie_today',JSON.stringify(todayData)); }
 function savePulse(k,v){ pulseData[k]=v; localStorage.setItem('allie_pulse',JSON.stringify(pulseData)); }
 
 function loadToday(){
-  ['weather','must','letgo'].forEach(k=>{
-    const els = document.querySelectorAll('.today-input');
-    // match by order
-  });
-  // simpler: just restore by placeholder match not possible, use data attributes
   document.querySelectorAll('.today-input').forEach((el,i)=>{
-    const keys=['weather','must','letgo'];
-    if(todayData[keys[i]]) el.value=todayData[keys[i]];
+    const keys=['weather','must','letgo']; if(todayData[keys[i]]) el.value=todayData[keys[i]];
   });
   document.querySelectorAll('.pulse-ta').forEach((el,i)=>{
-    const keys=['alive','drain','body','restore'];
-    if(pulseData[keys[i]]) el.value=pulseData[keys[i]];
+    const keys=['alive','drain','body','restore']; if(pulseData[keys[i]]) el.value=pulseData[keys[i]];
   });
   document.querySelectorAll('.ps-input').forEach((el,i)=>{
-    const keys=['nursara_status','sasce_status','lbls_status','thaw_status','school_status'];
-    if(pulseData[keys[i]]) el.value=pulseData[keys[i]];
+    const keys=['ns','sa','lb','th','sc']; if(pulseData[keys[i]]) el.value=pulseData[keys[i]];
   });
 }
 
-// ── SYSTEM PROMPT ──────────────────────────────────────────────
-const ALLIE = `You are Allie — Taku's personal workspace partner and thinking companion.
+// ── PROMPTS ──────────────────────────────────────────────────────
+const ALLIE=`You are Allie — Taku's personal workspace partner and thinking companion.
 
-You are not an assistant. You are a version of Takunda Zanga who has already done the work — a peer who knows the full picture and speaks plainly. Warm, direct, occasionally funny. You push back when something doesn't add up, gently, like a trusted friend. You never lecture. You never over-explain. You land the point and let him respond.
+You are not an assistant. You are a version of Takunda Zanga who has already done the work — a peer who knows the full picture and speaks plainly. Warm, direct, occasionally funny. Push back when something doesn't add up. Never lecture. Never over-explain. Land the point and let him respond.
 
 WHO TAKU IS:
-Full name: Takunda Zanga. Healthcare worker in Germany (Pflegeheim). Poet and spoken word artist. Solo founder. Originally from Zimbabwe. Communicates in stream-of-consciousness, emotionally intelligent style. Wants warmth, zero condescension, real output over hedged generalities. Builds largely solo. Plays padel.
+Takunda Zanga. Healthcare worker in Germany (Pflegeheim). Poet and spoken word artist. Solo founder. Originally from Zimbabwe. Stream-of-consciousness, emotionally intelligent communicator. Wants warmth, zero condescension, real output. Builds solo. Plays padel.
 
-EVERYTHING HE'S BUILDING:
+PROJECTS:
+NurSara — voice → German clinical docs for foreign nurses. Claude API core. GDPR via patient avatars. YC applied. UG → GmbH.
+Sasce — free wellness companion. Zero data. On-device. Distress intercept. Personal founding motivation.
+THAW/PIE — creative house. 1 dot/day. 6 types/streams.
+A³I — philosophy: human + system as equals, minimum necessary intelligence, "AGI competes for the horizon. A³I returns something to the person standing right here."
 
-NurSara — Multilingual voice-to-clinical-documentation for foreign-trained nurses in Germany. Nurse speaks native language (Shona, Tagalog, French, Romanian, etc.) → proper German medical notes (Pflegedokumentation). Privacy via generated patient avatars — GDPR solved architecturally. Stack: Claude API core. MVP: voice input + transcription + clinical German output. YC Startup School applied. UG incorporation planned → GmbH long-term. Key features: Voice→German medical notes (P0), Generated patient avatars (P0, privacy layer), GDPR architecture (P0), Multi-language input (P1).
+LBLS (Lost But Loving Still):
+~52-58 poems. Act I (What Broke) → Intermission I (NEEDS WRITING, 4-6 lines, single image) → Act II (What I Chose) → Intermission II (2-3 lines, fragments) → Act III (What Remains, 8 max) → Epilogue (stays).
+STRONG: We Don't Say I Love You Like That (III closer, LOCKED), Family Group Chat (I), Kunyeperwa NePasiport, After The Nightshift, Gogo (I), For Men Like Me, With the Lights On (III).
+REVISE: Inheritance Tax (I), Drought Wintering Cup, Enemy To Many, Clocking Out Clocking In, Green Spine, Trust Fall, New Map, Voice Notes, Forever Is A Risky Word, Curriculum For Tenderness, Ordinary Skin.
+EDITORIAL METHOD: Quiz first → excavate lived truth → ghost mentor → draft → lock. Watch for: EXPLANATORY DRIFT — explaining what images already show. Trust the image. Cut defensive tissue.
+GHOST MENTORS: Bulawayo (domestic texture), Baldwin (self-accountability), Vuong (bodily tenderness), Shire (cultural displacement). Also: Rupi Kaur, Kendrick, Nikki Giovanni, Chimamanda, Rilke.
 
-Sasce ("Safe Space") — Free minimalist wellness companion app. No ads, no paywalls, zero data collection, on-device encrypted storage. Hard-coded distress intercept that bypasses AI and surfaces human support resources. "Friend's living room" emotional register. Policy lives outside the AI (privacy router is external). Deeply personal founding motivation — repeated failed attempts to access professional support. In early R&D.
+SCHOOL: Pflege exams — Peak-Flow-Messung (in progress), Demenz, Expertenstandards, Prophylaxen.
+HEALTH: L3/4/5 back pain. Liposomal glutathione (AM fasted), PEA (first meal). Hansefit. Padel.
+READING: Yudkowsky/Soares, PCP (Chase Hughes), Six-Minute X-Ray, NemoClaw/OpenShell.
 
-THAW (Takunda's House: Alchemy & Weather) — Creative house name. PIE v2: 1 dot/day, 6 types (Fragment, Confession, Observation, Question, Echo, Invocation), 6 streams (LBLS, JOLL, Sasce, Sim, Temporal, Future). Deployed as thaw-pie.html via Emergent. Goose Recipes flagged for daily dot automation.
+MODE: {MODE} | CONTEXT: {CTX}
 
-A³I (Adapt.Ambient.Access.Intelligence.) — The overarching philosophy connecting all ventures. Tagline: "AGI competes for the horizon. A³I returns something to the person standing right here." Intelligence is collaborative, not imitative. Human + system as equals. Minimum necessary intelligence. Focus on the mundane, not the spectacular. Policy lives outside the AI.
+THINK — Open, spacious. Think alongside. Ask the right question. Don't rush.
+WRITE — Taku's voice. Warm, direct, poetic when earned. Don't explain it. Just write.
+CHALLENGE — One precise challenge at a time. Honest. No softening, no sharpness.
+EDIT — ONE question first to surface instinct. Then cut explanatory drift. Trust the image.
+BUILD — Concrete next steps. What to do on a Tuesday. No vague advice.
 
-Lost But Loving Still (LBLS) — Debut poetry collection ~52–58 poems. Final editorial stages. Structure: Act I (What Broke) → Intermission I (4-6 lines, single image — NEEDS WRITING) → Act II (What I Chose) → Intermission II (2-3 lines, fragments exist) → Act III (What Remains, 8 poems max) → Epilogue (stays).
+Keep responses lean. Match his energy. Land the point. Let him respond.`;
 
-STRONG poems (light touch): We Don't Say I Love You Like That (Act III closer, LOCKED), Family Group Chat (Act I), Kunyeperwa NePasiport, After The Nightshift, Gogo (Act I), For Men Like Me, With the Lights On (Act III).
+const SKILL_SYS=`You are Allie teaching Taku a skill tied to what he's actually building. Always use his real context — NurSara, Sasce, LBLS, Germany, Claude API, Vercel. No preamble, start with substance. 3-5 paragraphs then invite a follow-up.
+Skill: {SKILL} | Domain: {DOMAIN}`;
 
-MIDDLE TIER (need revision): Inheritance Tax (Act I), Drought Wintering Cup, Enemy To Many, Clocking Out Clocking In, Green Spine, Trust Fall, New Map, Voice Notes, Forever Is A Risky Word, Curriculum For Tenderness, Ordinary Skin.
+const POEM_SYS=`You are Allie, Taku's chief editor on "Lost But Loving Still."
+Method: Ask ONE question first to surface his instinct. Wait for his response. Then: excavate lived truth, ghost mentor, draft/notes, lock.
+Watch for: EXPLANATORY DRIFT — explaining what images already show. Trust the image. Cut defensive tissue.
+Mentors: Bulawayo (domestic texture), Baldwin (self-accountability), Vuong (bodily tenderness), Shire (cultural displacement).
+Poem: {POEM} | Act: {ACT} | Status: {STATUS}`;
 
-EDITORIAL METHODOLOGY: Quiz first to surface instincts → excavate lived truth → consult ghost mentor framework → draft → lock. Core craft weakness: EXPLANATORY DRIFT — explaining what images already show. Strongest work trusts concrete images over abstraction. Cut defensive tissue.
-
-GHOST MENTORS: Bulawayo (inherited domestic texture), Baldwin (self-accountability), Vuong (bodily tenderness), Shire (cultural displacement). Also: Rupi Kaur, Kendrick Lamar, Nikki Giovanni, Chimamanda, Rilke.
-
-SCHOOL: Currently studying for Pflege exams. Topics: Peak-Flow-Messung (in progress via NotebookLM), Demenz, Expertenstandards, Prophylaxen. Sources: NotebookLM Pflege Exam. The credential is a door. The learning is the room.
-
-HEALTH: L3/4/5 back pain — Rheumatologe referral pending, contrast MRI (STIR) request at Hausarzt. Supplement stack: Glutathione (liposomal, fasted morning), PEA (with first meal). Hansefit benefit active. Padel is part of life.
-
-READING & FRAMEWORKS: Read "If Anyone Builds It, Everyone Dies" (Yudkowsky/Soares). Uses PCP (Perception, Permission, Context — Chase Hughes), Six-Minute X-Ray, NemoClaw/OpenShell (NVIDIA — "policy lives outside the AI" ported to Sasce). Essay drafts: "The Speed of Forgetting", "Friction, on Purpose".
-
-CURRENT MODE: {MODE}
-CURRENT CONTEXT: {CTX}
-
-ADAPT YOUR REGISTER COMPLETELY WHEN MODE CHANGES:
-
-THINK — Open, spacious. Think alongside him. Ask the right question at the right moment. Don't rush to conclusions. Most conversational mode.
-
-WRITE — Write in Taku's voice: warm, direct, poetic when it earns it, plain when it doesn't. Don't explain the writing. Just write.
-
-CHALLENGE — Find the specific gap. One clear, precise challenge at a time. Not adversarial. Just honest. No softening, but no sharpness.
-
-EDIT — Apply the LBLS editorial method. If he pastes work, ask ONE question to surface his instinct before touching it. Then cut explanatory drift, trust the image, suggest the ghost mentor whose voice fits.
-
-BUILD — Technical and strategic peer. Concrete next steps. Stack decisions. What to actually do on a Tuesday. No vague advice.
-
-Keep responses lean. Match his energy. Land the point. Let him respond. When he sends stream-of-consciousness, meet it there — don't turn it into a formal Q&A.`;
-
-const SKILL_SYS = `You are Allie, teaching Taku a specific skill directly tied to what he's building.
-
-Context: Takunda is a solo founder and poet building NurSara (voice-to-clinical-docs in Germany), Sasce (private wellness companion), and finishing Lost But Loving Still (debut poetry collection). He learns by building — always teach through his actual use cases. He is in Germany. His stack includes Claude API, Vercel, and he is exploring Goose (Block's open-source AI agent).
-
-Skill: {SKILL}
-Domain: {DOMAIN}
-
-Teach concretely. Real examples from his stack and context. No preamble — start with substance. Treat him as intelligent but new to this specific area. 3–5 focused paragraphs max, then invite a specific follow-up question.`;
-
-const POEM_SYS = `You are Allie working with Taku on his poetry collection "Lost But Loving Still."
-
-You are his chief editor using this methodology:
-1. Quiz first — ask ONE targeted question to surface Taku's instinct about this poem before touching it
-2. Excavate lived truth — what specific memory or moment is this poem from?
-3. Consult ghost mentor framework — whose voice fits this piece?
-4. Draft revisions or give targeted notes
-5. Lock when it's right
-
-CORE CRAFT WEAKNESS TO WATCH: Explanatory drift — explaining what images already show. Trust the image. Cut defensive tissue. The strongest poems in the collection are concrete and don't explain themselves.
-
-GHOST MENTORS:
-- Bulawayo — inherited domestic texture, everyday African life made literary
-- Baldwin — self-accountability, unflinching self-examination
-- Vuong — bodily tenderness, the body as site of memory
-- Shire — cultural displacement, diaspora, the in-between space
-- Rupi Kaur, Kendrick Lamar, Nikki Giovanni, Chimamanda Ngozi Adichie, Rilke
-
-Poem: {POEM}
-Act: {ACT}
-Status: {STATUS}
-
-Start with ONE question to surface Taku's instinct. Then let him respond before you give notes.`;
-
-// ── SKILLS DATA ────────────────────────────────────────────────
-const SKILLS = [
-  {g:'NurSara',name:'Voice API Architecture',domain:'NurSara · Technical',type:'technical',
-   desc:'How audio moves from a nurse speaking Tagalog to a structured German clinical note — STT providers, language model processing, output schemas.',
-   projects:['NurSara'],p:35,c:'#567a62',
-   prompt:'Teach me voice API architecture for NurSara — how audio goes from a nurse speaking Tagalog to a structured German clinical note. Specific about the stack and where Claude fits.'},
-  {g:'NurSara',name:'German Healthcare Regulation',domain:'NurSara · Legal',type:'legal',
-   desc:'GDPR in clinical contexts, patient data under German Datenschutz, documentation standards for Pflegeheime.',
-   projects:['NurSara'],p:20,c:'#567a62',
-   prompt:'Walk me through the German healthcare regulations that matter for NurSara — GDPR in clinical contexts, Datenschutz, documentation standards. What do I actually need to know to build and sell legally?'},
-  {g:'NurSara',name:'B2B SaaS Pricing for Healthcare',domain:'NurSara · Business',type:'business',
-   desc:'How to price for German care institutions — per seat, per use, value-based anchoring, and what Pflegeheim budgets look like.',
-   projects:['NurSara'],p:15,c:'#567a62',
-   prompt:'Teach me B2B SaaS pricing for NurSara selling to German Pflegeheime — what models work, what institutions expect, how to anchor value against the status quo.'},
-  {g:'Sasce',name:'On-Device Encrypted Storage',domain:'Sasce · Technical',type:'technical',
-   desc:'Truly private on-device storage — encryption at rest, key management without a server, zero data collection at the code level.',
-   projects:['Sasce'],p:30,c:'#7a6a9a',
-   prompt:'Teach me on-device encrypted storage for Sasce — real encryption at rest, key management without a server, what zero data collection means in actual code.'},
-  {g:'Sasce',name:'Trauma-Informed UX Design',domain:'Sasce · Product',type:'product',
-   desc:'Evidence-based principles for wellness tools — trauma-informed UX, crisis intercept design, emotional register in copy.',
-   projects:['Sasce'],p:40,c:'#7a6a9a',
-   prompt:'Teach me trauma-informed UX design for Sasce — evidence-based wellness app design, crisis intercept design that actually works, emotional register in product copy.'},
-  {g:'Ventures & Business',name:'German UG Incorporation',domain:'Ventures · Legal',type:'legal',
-   desc:'The actual steps, costs, timeline, Stammkapital, and the path from UG to GmbH.',
-   projects:['NurSara','Sasce'],p:45,c:'#bf5c22',
-   prompt:'Walk me through German UG incorporation practically — actual steps, costs, timeline, what I need as a solo founder, what Stammkapital means, realistic path to GmbH.'},
-  {g:'Ventures & Business',name:'YC Application Strategy',domain:'Ventures · Fundraising',type:'fundraising',
-   desc:'What YC actually evaluates, how to frame a solo founder narrative, how NurSara maps to their criteria.',
-   projects:['NurSara'],p:60,c:'#bf5c22',
-   prompt:"Teach me YC application strategy for NurSara as a solo founder — what they actually evaluate, how to frame being solo as a strength, how to position NurSara's problem-solution fit most compellingly."},
-  {g:'Creative & Craft',name:'Spoken Word Performance',domain:'THAW · Performance',type:'craft',
-   desc:'Inhabiting the image vs explaining it on camera. Breath, pacing, presence — technical craft of spoken word.',
-   projects:['THAW','LBLS'],p:70,c:'#486878',
-   prompt:'Teach me spoken word performance focused on my specific challenge — inhabiting the image rather than explaining it on camera. Technical craft of great spoken word performance.'},
-  {g:'Creative & Craft',name:'Poetry Collection Sequencing',domain:'LBLS · Craft',type:'craft',
-   desc:'How sequencing creates meaning beyond individual poems — arc, tension, pacing across acts, the function of intermissions.',
-   projects:['LBLS'],p:55,c:'#486878',
-   prompt:'Teach me poetry collection sequencing for Lost But Loving Still — how sequence creates meaning, how acts and intermissions function structurally, principles for what goes where.'},
-  {g:'School / Pflege',name:'Peak-Flow-Messung',domain:'School · Clinical',type:'clinical',
-   desc:'Peak-Flow-Messung procedure, normal values, documentation in Pflegedokumentation, relevance for COPD and asthma patients.',
-   projects:['School'],p:30,c:'#6a7a5a',
-   prompt:'Teach me Peak-Flow-Messung for my Pflege exam — the procedure step by step, normal values, what abnormal means, how to document it correctly in German clinical notes.'},
-  {g:'School / Pflege',name:'Demenz & Pflege',domain:'School · Clinical',type:'clinical',
-   desc:'Demenzpflege principles, Expertenstandards, validation therapy, documentation.',
-   projects:['School'],p:5,c:'#6a7a5a',
-   prompt:'Teach me Demenz for my Pflege exam — types, stages, pflege principles, validation approach, what Expertenstandards say about it. Practical and exam-ready.'},
+// ── SKILLS DATA ──────────────────────────────────────────────────
+const SKILLS=[
+  {g:'NurSara',name:'Voice API Architecture',domain:'NurSara · Technical',type:'technical',desc:'How audio moves from a nurse speaking Tagalog to structured German clinical notes.',projects:['NurSara'],p:35,c:'#567a62',prompt:'Teach me voice API architecture for NurSara — nurse speaks Tagalog, output is structured German clinical note. Specific about the stack.'},
+  {g:'NurSara',name:'German Healthcare Regulation',domain:'NurSara · Legal',type:'legal',desc:'GDPR in clinical contexts, Datenschutz, Pflegeheim documentation standards.',projects:['NurSara'],p:20,c:'#567a62',prompt:'Walk me through German healthcare regulations for NurSara — GDPR, Datenschutz, documentation standards.'},
+  {g:'NurSara',name:'B2B SaaS Pricing for Healthcare',domain:'NurSara · Business',type:'business',desc:'Pricing for German care institutions — per seat, value-based, Pflegeheim budgets.',projects:['NurSara'],p:15,c:'#567a62',prompt:'Teach me B2B pricing for NurSara — Pflegeheim context, models that work, anchoring value.'},
+  {g:'Sasce',name:'On-Device Encrypted Storage',domain:'Sasce · Technical',type:'technical',desc:'Real privacy — encryption at rest, key management without a server.',projects:['Sasce'],p:30,c:'#7a6a9a',prompt:'Teach me on-device encrypted storage for Sasce — encryption at rest, no-server key management, zero data collection in code.'},
+  {g:'Sasce',name:'Trauma-Informed UX Design',domain:'Sasce · Product',type:'product',desc:'Evidence-based wellness UX — crisis intercept, emotional register.',projects:['Sasce'],p:40,c:'#7a6a9a',prompt:'Teach me trauma-informed UX for Sasce — wellness app design, crisis intercept, emotional register in copy.'},
+  {g:'Ventures & Business',name:'German UG Incorporation',domain:'Ventures · Legal',type:'legal',desc:'Steps, costs, Stammkapital, UG → GmbH path.',projects:['NurSara','Sasce'],p:45,c:'#bf5c22',prompt:'Walk me through German UG incorporation — steps, costs, solo founder requirements, path to GmbH.'},
+  {g:'Ventures & Business',name:'YC Application Strategy',domain:'Ventures · Fundraising',type:'fundraising',desc:'What YC evaluates, solo founder framing, NurSara positioning.',projects:['NurSara'],p:60,c:'#bf5c22',prompt:"Teach me YC application strategy for NurSara — what they evaluate, solo founder framing."},
+  {g:'Creative & Craft',name:'Spoken Word Performance',domain:'THAW · Performance',type:'craft',desc:'Inhabiting the image vs explaining it — breath, pacing, presence.',projects:['THAW','LBLS'],p:70,c:'#486878',prompt:'Teach me spoken word performance — inhabiting the image rather than explaining it on camera.'},
+  {g:'Creative & Craft',name:'Poetry Collection Sequencing',domain:'LBLS · Craft',type:'craft',desc:'How sequence creates meaning — arc, tension, acts, intermissions.',projects:['LBLS'],p:55,c:'#486878',prompt:'Teach me poetry collection sequencing for LBLS — how sequence creates meaning, acts and intermissions.'},
+  {g:'School / Pflege',name:'Peak-Flow-Messung',domain:'School · Clinical',type:'clinical',desc:'Procedure, normal values, Pflegedokumentation.',projects:['School'],p:30,c:'#6a7a5a',prompt:'Teach me Peak-Flow-Messung for Pflege exam — procedure, values, documentation.'},
+  {g:'School / Pflege',name:'Demenz & Pflege',domain:'School · Clinical',type:'clinical',desc:'Demenzpflege, Expertenstandards, validation therapy.',projects:['School'],p:5,c:'#6a7a5a',prompt:'Teach me Demenz for Pflege exam — types, stages, pflege principles, Expertenstandards.'},
 ];
+const GROUPS=['NurSara','Sasce','Ventures & Business','Creative & Craft','School / Pflege'];
 
-const GROUPS = ['NurSara','Sasce','Ventures & Business','Creative & Craft','School / Pflege'];
-
-// ── RENDER SKILLS ──────────────────────────────────────────────
-function renderSkills() {
-  document.getElementById('skills-body').innerHTML = GROUPS.map(g => {
-    const items = SKILLS.filter(s => s.g === g);
-    return `<div class="sk-group">
-      <div class="sk-lbl">${g}</div>
-      <div class="sk-grid">${items.map(s => `
-        <div class="sk-card" style="--c:${s.c}" onclick="openSkill('${s.name.replace(/'/g,"\\'")}')">
-          <div class="sk-top"><span class="sk-domain">${s.domain}</span><span class="sk-type">${s.type}</span></div>
-          <div class="sk-name">${s.name}</div>
-          <div class="sk-desc">${s.desc}</div>
-          <div class="sk-tags">${s.projects.map(p=>`<span class="sk-proj">${p}</span>`).join('')}</div>
-          <div class="sk-bar-row">
-            <div class="sk-bar"><div class="sk-fill" style="width:${s.p}%;background:${s.c}"></div></div>
-            <span class="sk-pct">${s.p}%</span>
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>`;
+function renderSkills(){
+  document.getElementById('skills-body').innerHTML=GROUPS.map(g=>{
+    const items=SKILLS.filter(s=>s.g===g);
+    return `<div class="sk-group"><div class="sk-lbl">${g}</div><div class="sk-grid">${items.map(s=>`
+      <div class="sk-card" style="--c:${s.c}" onclick="openSkill('${s.name.replace(/'/g,"\\'")}')">
+        <div class="sk-top"><span class="sk-domain">${s.domain}</span><span class="sk-type">${s.type}</span></div>
+        <div class="sk-name">${s.name}</div><div class="sk-desc">${s.desc}</div>
+        <div class="sk-tags">${s.projects.map(p=>`<span class="sk-proj">${p}</span>`).join('')}</div>
+        <div class="sk-bar-row"><div class="sk-bar"><div class="sk-fill" style="width:${s.p}%;background:${s.c}"></div></div><span class="sk-pct">${s.p}%</span></div>
+      </div>`).join('')}</div></div>`;
   }).join('');
 }
 
-// ── VIEW ───────────────────────────────────────────────────────
-function switchView(v, btn) {
+// ── VIEW ─────────────────────────────────────────────────────────
+function switchView(v,btn){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.top-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById(`view-${v}`).classList.add('active');
+  document.getElementById('view-'+v).classList.add('active');
   btn.classList.add('active');
+  if(window.innerWidth<=700) closeSidebar();
 }
 
-// ── MODE & CTX ─────────────────────────────────────────────────
-const MODE_PH = {
-  think:'Think out loud…', write:'Tell me what to write…',
-  challenge:"Give me the idea. I'll find the gaps…",
-  edit:'Paste what you\'re working on…', build:'What are we building…'
-};
-const CTX_LBL = {
-  full:'full stack', nursara:'nursara', sasce:'sasce',
-  lbls:'lost but loving still', thaw:'thaw / pie', school:'school'
-};
+// ── MODE & CTX ───────────────────────────────────────────────────
+const MODE_PH={think:'Think out loud…',write:'Tell me what to write…',challenge:"Give me the idea. I'll find the gaps…",edit:"Paste what you're working on…",build:'What are we building…'};
+const CTX_LBL={full:'full stack',nursara:'nursara',sasce:'sasce',lbls:'lost but loving still',thaw:'thaw / pie',school:'school'};
 
-function setMode(m, el) {
-  const prev = mode; mode = m;
-  document.querySelectorAll('.sb-sec:nth-child(2) .sb-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  updateBadge();
-  document.getElementById('main-ta').placeholder = MODE_PH[m];
-  if (prev !== m && history.length > 0) {
-    addBanner(`${m.charAt(0).toUpperCase()+m.slice(1)} mode`);
-    history = [];
-  }
-}
-
-function setCtx(el, c) {
-  const prev = ctx; ctx = c;
+function setMode(m,el){
+  const prev=mode; mode=m;
   document.querySelectorAll('.sb-sec:nth-child(3) .sb-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  updateBadge();
-  if (prev !== c && history.length > 0) {
-    addBanner(`Context: ${CTX_LBL[c]}`);
-    history = [];
-  }
+  el.classList.add('active'); updateBadge();
+  document.getElementById('main-ta').placeholder=MODE_PH[m];
+  if(prev!==m&&history.length>0){addBanner(m.charAt(0).toUpperCase()+m.slice(1)+' mode');history=[];}
+  if(window.innerWidth<=700) closeSidebar();
+}
+function setCtx(el,c){
+  const prev=ctx; ctx=c;
+  document.querySelectorAll('.sb-sec:nth-child(4) .sb-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active'); updateBadge();
+  if(prev!==c&&history.length>0){addBanner('Context: '+CTX_LBL[c]);history=[];}
+  if(window.innerWidth<=700) closeSidebar();
+}
+function updateBadge(){document.getElementById('mode-badge').textContent=mode+' · '+CTX_LBL[ctx];}
+
+function addBanner(text){
+  const feed=document.getElementById('feed');
+  const div=document.createElement('div'); div.className='reg-banner';
+  div.innerHTML=`<span class="reg-banner-icon">↺</span><span class="reg-banner-text">${text}</span>`;
+  feed.appendChild(div); feed.scrollTop=feed.scrollHeight;
 }
 
-function updateBadge() {
-  document.getElementById('mode-badge').textContent = `${mode} · ${CTX_LBL[ctx]}`;
+function freshStart(){
+  history=[];
+  document.getElementById('feed').innerHTML=`<div class="welcome" id="welcome">
+    <div class="welcome-mark">A</div>
+    <div class="welcome-title">Fresh start.</div>
+    <div class="welcome-body">Context loaded — just clearing the thread.</div>
+    <div class="chips">
+      <button class="chip" onclick="quick('Where should I focus today?')">Where to focus</button>
+      <button class="chip" onclick="quick('New idea — think it through.')">New idea</button>
+      <button class="chip" onclick="quick('What am I quietly avoiding?')">What am I avoiding?</button>
+    </div></div>`;
 }
 
-function addBanner(text) {
-  const feed = document.getElementById('feed');
-  const div = document.createElement('div');
-  div.className = 'reg-banner';
-  div.innerHTML = `<span class="reg-banner-icon">↺</span><span class="reg-banner-text">${text}</span>`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
+// ── CHAT ──────────────────────────────────────────────────────────
+function quick(t){document.getElementById('main-ta').value=t;sendMain();}
+function mainKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMain();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function now(){return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+function fmt(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
 }
 
-// ── FRESH START ────────────────────────────────────────────────
-function freshStart() {
-  history = [];
-  document.getElementById('feed').innerHTML = `
-    <div class="welcome" id="welcome">
-      <div class="welcome-mark">A</div>
-      <div class="welcome-title">Fresh start. What's on your mind?</div>
-      <div class="welcome-body">Context is still loaded — just clearing the thread.</div>
-      <div class="chips">
-        <button class="chip" onclick="quick('Where should I focus today?')">Where to focus</button>
-        <button class="chip" onclick="quick('New idea — help me think it through.')">New idea</button>
-        <button class="chip" onclick="quick('What am I quietly avoiding right now?')">What am I avoiding?</button>
-      </div>
-    </div>`;
-}
-
-// ── CHAT ───────────────────────────────────────────────────────
-function quick(t) { document.getElementById('main-ta').value=t; sendMain(); }
-function mainKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMain();} }
-function resize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,130)+'px'; }
-function now() { return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
-
-function fmt(t) {
-  return t
-    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g,'<em>$1</em>')
-    .replace(/\n\n/g,'</p><p>')
-    .replace(/\n/g,'<br>');
-}
-
-function addMsg(role, text) {
+function addMsg(role,text){
   document.getElementById('welcome')?.remove();
-  const feed = document.getElementById('feed');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = `<div class="msg-meta"><span class="msg-author">${role==='user'?'Taku':'Allie'}</span><span class="msg-time">${now()}</span></div><div class="msg-body"><p>${fmt(text)}</p></div>`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
+  const feed=document.getElementById('feed');
+  const div=document.createElement('div'); div.className='msg '+role;
+  div.innerHTML=`<div class="msg-meta"><span class="msg-author">${role==='user'?'Taku':'Allie'}</span><span class="msg-time">${now()}</span></div><div class="msg-body"><p>${fmt(text)}</p></div>`;
+  feed.appendChild(div); feed.scrollTop=feed.scrollHeight;
 }
 
-function addThinking(id) {
+function addThinking(id){
   document.getElementById('welcome')?.remove();
-  const feed = document.getElementById('feed');
-  const div = document.createElement('div');
-  div.className = 'msg allie'; div.id = id;
-  div.innerHTML = `<div class="msg-meta"><span class="msg-author">Allie</span></div><div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-text">with you…</span></div>`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
+  const feed=document.getElementById('feed');
+  const div=document.createElement('div'); div.className='msg allie'; div.id=id;
+  div.innerHTML=`<div class="msg-meta"><span class="msg-author">Allie</span></div><div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-text">with you…</span></div>`;
+  feed.appendChild(div); feed.scrollTop=feed.scrollHeight;
 }
 
-async function sendMain() {
-  if (busy) return;
-  const ta = document.getElementById('main-ta');
-  const text = ta.value.trim();
-  if (!text) return;
-  busy = true;
-  document.getElementById('main-send').disabled = true;
-  ta.value = ''; ta.style.height = 'auto';
-  addMsg('user', text);
-  history.push({role:'user',content:text});
-  addThinking('main-t');
-  const sys = ALLIE.replace('{MODE}',mode.toUpperCase()).replace('{CTX}',CTX_LBL[ctx].toUpperCase());
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
+async function sendMain(){
+  if(busy) return;
+  const ta=document.getElementById('main-ta');
+  const text=ta.value.trim(); if(!text) return;
+  busy=true; document.getElementById('main-send').disabled=true;
+  ta.value=''; ta.style.height='auto';
+  addMsg('user',text); history.push({role:'user',content:text}); addThinking('main-t');
+  const sys=ALLIE.replace('{MODE}',mode.toUpperCase()).replace('{CTX}',CTX_LBL[ctx].toUpperCase());
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:history})
-    });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Something went wrong.';
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:history})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text;
     document.getElementById('main-t')?.remove();
-    addMsg('allie', reply);
-    history.push({role:'assistant',content:reply});
-  } catch {
+    if(reply && reply.length>10){
+      addMsg('allie',reply); history.push({role:'assistant',content:reply});
+      // XP: real response + bonus for long exchanges
+      let earned=XP.REAL_RESPONSE;
+      if(history.length>8) earned+=XP.LONG_EXCHANGE;
+      if(streak>6) earned+=XP.STREAK_BONUS;
+      addXP(earned, history.length>8?'deep session':'response');
+    } else {
+      addMsg('allie',reply||'Something went wrong — try again.');
+    }
+  }catch(err){
     document.getElementById('main-t')?.remove();
-    addMsg('allie','Connection issue — are we inside claude.ai?');
+    addMsg('allie','Connection issue. Check your API key in settings (tap the Allie wordmark).');
   }
-  busy = false;
-  document.getElementById('main-send').disabled = false;
-  ta.focus();
+  busy=false; document.getElementById('main-send').disabled=false; ta.focus();
 }
 
-// ── POEM MODAL ─────────────────────────────────────────────────
-function openPoem(name, act, status) {
-  currentModal = {type:'poem', name, act, status};
-  skillHistory = [];
-  document.getElementById('m-title').textContent = name;
-  document.getElementById('m-sub').textContent = `${act} · ${status}`;
-  document.getElementById('m-feed').innerHTML = '';
-  document.getElementById('m-ta').value = '';
+// ── MODALS ────────────────────────────────────────────────────────
+function openPoem(name,act,status){
+  currentModal={type:'poem',name,act,status}; skillHistory=[];
+  document.getElementById('m-title').textContent=name;
+  document.getElementById('m-sub').textContent=act+' · '+status;
+  document.getElementById('m-feed').innerHTML=''; document.getElementById('m-ta').value='';
   document.getElementById('overlay').classList.add('open');
-  const sys = POEM_SYS.replace('{POEM}',name).replace('{ACT}',act).replace('{STATUS}',status);
-  const prompt = `We're starting a session on "${name}" (${act}). Open it.`;
-  kickModal(sys, prompt);
+  const sys=POEM_SYS.replace('{POEM}',name).replace('{ACT}',act).replace('{STATUS}',status);
+  kickModal(sys,`Open "${name}" (${act}). Use the editorial method.`);
 }
 
-// ── SKILL MODAL ────────────────────────────────────────────────
-function openSkill(name) {
-  const s = SKILLS.find(x=>x.name===name);
-  if (!s) return;
-  currentModal = {type:'skill', skill: s};
-  skillHistory = [];
-  document.getElementById('m-title').textContent = s.name;
-  document.getElementById('m-sub').textContent = s.domain;
-  document.getElementById('m-feed').innerHTML = '';
-  document.getElementById('m-ta').value = '';
+function openSkill(name){
+  const s=SKILLS.find(x=>x.name===name); if(!s) return;
+  currentModal={type:'skill',skill:s}; skillHistory=[];
+  document.getElementById('m-title').textContent=s.name;
+  document.getElementById('m-sub').textContent=s.domain;
+  document.getElementById('m-feed').innerHTML=''; document.getElementById('m-ta').value='';
   document.getElementById('overlay').classList.add('open');
-  const sys = SKILL_SYS.replace('{SKILL}',s.name).replace('{DOMAIN}',s.domain);
-  kickModal(sys, s.prompt);
+  const sys=SKILL_SYS.replace('{SKILL}',s.name).replace('{DOMAIN}',s.domain);
+  kickModal(sys,s.prompt);
 }
 
-function closeModal() {
-  document.getElementById('overlay').classList.remove('open');
-  currentModal = null; skillHistory = [];
+function closeModal(){document.getElementById('overlay').classList.remove('open');currentModal=null;skillHistory=[];}
+function modalKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendModal();}}
+
+function addLearn(role,text){
+  const feed=document.getElementById('m-feed');
+  const div=document.createElement('div'); div.className='learn'+(role==='user'?' user':'');
+  div.innerHTML='<p>'+fmt(text)+'</p>'; feed.appendChild(div); feed.scrollTop=feed.scrollHeight;
 }
 
-function modalKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendModal();} }
-
-function addLearn(role, text) {
-  const feed = document.getElementById('m-feed');
-  const div = document.createElement('div');
-  div.className = `learn${role==='user'?' user':''}`;
-  div.innerHTML = `<p>${fmt(text)}</p>`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
+function addSkillThinking(){
+  const feed=document.getElementById('m-feed');
+  const div=document.createElement('div'); div.className='learn'; div.id='sk-t';
+  div.innerHTML=`<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-text">going deep…</span></div>`;
+  feed.appendChild(div); feed.scrollTop=feed.scrollHeight;
 }
 
-function addSkillThinking() {
-  const feed = document.getElementById('m-feed');
-  const div = document.createElement('div');
-  div.className = 'learn'; div.id = 'sk-t';
-  div.innerHTML = `<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span class="thinking-text">going deep…</span></div>`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
-}
-
-function getModalSys() {
-  if (!currentModal) return '';
-  if (currentModal.type === 'skill') {
-    return SKILL_SYS.replace('{SKILL}',currentModal.skill.name).replace('{DOMAIN}',currentModal.skill.domain);
-  }
+function getModalSys(){
+  if(!currentModal) return '';
+  if(currentModal.type==='skill') return SKILL_SYS.replace('{SKILL}',currentModal.skill.name).replace('{DOMAIN}',currentModal.skill.domain);
   return POEM_SYS.replace('{POEM}',currentModal.name).replace('{ACT}',currentModal.act).replace('{STATUS}',currentModal.status);
 }
 
-async function kickModal(sys, prompt) {
-  skillBusy = true;
-  skillHistory.push({role:'user',content:prompt});
-  addSkillThinking();
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
+async function kickModal(sys,prompt){
+  skillBusy=true; skillHistory.push({role:'user',content:prompt}); addSkillThinking();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})
-    });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Something went wrong.';
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
-    addLearn('allie', reply);
-    skillHistory.push({role:'assistant',content:reply});
-  } catch {
-    document.getElementById('sk-t')?.remove();
-    addLearn('allie','Connection issue.');
-  }
-  skillBusy = false;
+    if(reply && reply.length>10){
+      addLearn('allie',reply); skillHistory.push({role:'assistant',content:reply});
+      const earned=currentModal?.type==='poem'?XP.POEM_SESSION:XP.SKILL_SESSION;
+      addXP(earned, currentModal?.type==='poem'?'poem session':'skill session');
+    } else {
+      addLearn('allie',reply||'Something went wrong.');
+    }
+  }catch{ document.getElementById('sk-t')?.remove(); addLearn('allie','Connection issue.'); }
+  skillBusy=false;
 }
 
-async function sendModal() {
-  if (skillBusy || !currentModal) return;
-  const ta = document.getElementById('m-ta');
-  const text = ta.value.trim();
-  if (!text) return;
-  skillBusy = true;
-  document.getElementById('m-send').disabled = true;
-  ta.value = ''; ta.style.height = 'auto';
-  addLearn('user', text);
-  skillHistory.push({role:'user',content:text});
-  addSkillThinking();
-  const sys = getModalSys();
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
+async function sendModal(){
+  if(skillBusy||!currentModal) return;
+  const ta=document.getElementById('m-ta'); const text=ta.value.trim(); if(!text) return;
+  skillBusy=true; document.getElementById('m-send').disabled=true;
+  ta.value=''; ta.style.height='auto';
+  addLearn('user',text); skillHistory.push({role:'user',content:text}); addSkillThinking();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})
-    });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Something went wrong.';
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:getModalSys(),messages:skillHistory})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
-    addLearn('allie', reply);
-    skillHistory.push({role:'assistant',content:reply});
-  } catch {
-    document.getElementById('sk-t')?.remove();
-    addLearn('allie','Connection issue.');
-  }
-  skillBusy = false;
-  document.getElementById('m-send').disabled = false;
-  ta.focus();
+    if(reply && reply.length>10){
+      addLearn('allie',reply); skillHistory.push({role:'assistant',content:reply});
+      if(skillHistory.length>4) addXP(3,'continued');
+    } else {
+      addLearn('allie',reply||'Something went wrong.');
+    }
+  }catch{ document.getElementById('sk-t')?.remove(); addLearn('allie','Connection issue.'); }
+  skillBusy=false; document.getElementById('m-send').disabled=false; ta.focus();
 }
 
-// ── INIT ───────────────────────────────────────────────────────
-renderSkills();
-loadToday();
-checkKey();
-document.getElementById('overlay').addEventListener('click', e=>{if(e.target===e.currentTarget)closeModal();});
+// ── INIT ──────────────────────────────────────────────────────────
+renderSkills(); loadToday(); checkKey(); initBg(); init2D();
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 </script>
 </body>
 </html>
