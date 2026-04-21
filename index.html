@@ -16,6 +16,11 @@
   --gold:#b89a6e; --sage:#567a62; --sky:#486878;
   --violet:#7a6a9a;
 }
+.light-theme {
+  --bg:#f5f0e8; --surf:#ede8e0; --surf2:#e5dfd6;
+  --line:#d4cec4; --line2:#c8c0b4;
+  --ink:#2a2318; --soft:#6a5a4a; --mute:#a09080;
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;height:100vh;display:flex;flex-direction:column}
@@ -71,6 +76,11 @@ body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml
 .sb-sub{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--mute);margin-top:1px}
 .sb-icon{font-size:.62rem;color:var(--amber-s);width:13px;text-align:center;flex-shrink:0}
 .sb-tagline{font-family:'Lora',serif;font-size:.62rem;font-style:italic;color:var(--mute);line-height:1.9;padding:3px 4px}
+.sb-lbl-btn{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-bottom:8px}
+.sb-lbl-btn .sb-lbl{margin-bottom:0}
+.sb-chev{font-size:.55rem;color:var(--mute);transition:transform .2s;display:inline-block;line-height:1}
+.sb-sec.collapsed .sb-chev{transform:rotate(-90deg)}
+.sb-sec.collapsed .sb-item{display:none}
 
 /* today panel */
 .today-panel{padding:12px;border-bottom:1px solid var(--line)}
@@ -342,8 +352,8 @@ textarea::placeholder{color:var(--mute);font-style:italic}
       <div class="xp-meta"><span id="sb-xp-label">Level 1 · Seedling</span><span id="sb-xp-next">0 / 100 xp</span></div>
     </div>
 
-    <div class="sb-sec">
-      <div class="sb-lbl">Mode</div>
+    <div class="sb-sec" id="sb-mode">
+      <div class="sb-lbl-btn" onclick="toggleSbSection('mode')"><div class="sb-lbl">Mode</div><span class="sb-chev">▾</span></div>
       <div class="sb-item active" onclick="setMode('think',this)"><span class="sb-icon">◎</span><div><div class="sb-name">Think</div><div class="sb-sub">explore · connect</div></div></div>
       <div class="sb-item" onclick="setMode('write',this)"><span class="sb-icon">✦</span><div><div class="sb-name">Write</div><div class="sb-sub">draft · voice</div></div></div>
       <div class="sb-item" onclick="setMode('challenge',this)"><span class="sb-icon">⚡</span><div><div class="sb-name">Challenge</div><div class="sb-sub">pressure test · gaps</div></div></div>
@@ -351,8 +361,8 @@ textarea::placeholder{color:var(--mute);font-style:italic}
       <div class="sb-item" onclick="setMode('build',this)"><span class="sb-icon">⬡</span><div><div class="sb-name">Build</div><div class="sb-sub">stack · ship</div></div></div>
     </div>
 
-    <div class="sb-sec">
-      <div class="sb-lbl">Context</div>
+    <div class="sb-sec" id="sb-ctx">
+      <div class="sb-lbl-btn" onclick="toggleSbSection('context')"><div class="sb-lbl">Context</div><span class="sb-chev">▾</span></div>
       <div class="sb-item active" onclick="setCtx(this,'full')"><div class="sb-dot" style="background:#bf5c22"></div><div><div class="sb-name">Full Stack</div><div class="sb-sub">everything</div></div></div>
       <div class="sb-item" onclick="setCtx(this,'nursara')"><div class="sb-dot" style="background:#567a62"></div><div><div class="sb-name">NurSara</div><div class="sb-sub">voice → clinical</div></div></div>
       <div class="sb-item" onclick="setCtx(this,'sasce')"><div class="sb-dot" style="background:#7a6a9a"></div><div><div class="sb-name">Sasce</div><div class="sb-sub">wellness · private</div></div></div>
@@ -542,6 +552,10 @@ textarea::placeholder{color:var(--mute);font-style:italic}
       <div class="settings-section">
         <div class="settings-section-lbl">Appearance</div>
         <div class="settings-row">
+          <div><div class="settings-label">Theme</div><div class="settings-sublabel">interface colour scheme</div></div>
+          <button class="settings-btn" id="theme-toggle" onclick="toggleTheme()">dark</button>
+        </div>
+        <div class="settings-row">
           <div><div class="settings-label">Background particles</div><div class="settings-sublabel">3D + 2D ambient field</div></div>
           <button class="settings-btn" id="particles-toggle" onclick="toggleParticles()">on</button>
         </div>
@@ -571,6 +585,10 @@ textarea::placeholder{color:var(--mute);font-style:italic}
 // ── API KEY ──────────────────────────────────────────────────────
 let API_KEY = localStorage.getItem('allie_key') || '';
 let particlesOn = true, burstOn = true;
+let appSettings = (function(){ try{ return JSON.parse(localStorage.getItem('allie_settings')||'{}'); }catch{ return {}; } })();
+if(!appSettings.theme) appSettings.theme='dark';
+if(!appSettings.collapsed) appSettings.collapsed={mode:false,context:false};
+function saveSettings(){ localStorage.setItem('allie_settings',JSON.stringify(appSettings)); }
 
 function checkKey(){
   const ks = document.getElementById('key-screen');
@@ -630,6 +648,16 @@ function toggleParticles(){
 function toggleBurst(){
   burstOn=!burstOn;
   document.getElementById('burst-toggle').textContent=burstOn?'on':'off';
+}
+
+function applyTheme(){
+  document.documentElement.classList.toggle('light-theme',appSettings.theme==='light');
+  const btn=document.getElementById('theme-toggle');
+  if(btn) btn.textContent=appSettings.theme;
+}
+function toggleTheme(){
+  appSettings.theme=appSettings.theme==='light'?'dark':'light';
+  saveSettings(); applyTheme();
 }
 
 document.getElementById('settings-overlay').addEventListener('click', function(e){
@@ -828,6 +856,16 @@ function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sb-backdrop').classList.remove('open');
   document.getElementById('hamburger').classList.remove('open');
+}
+
+function applySbCollapsed(){
+  const c=appSettings.collapsed;
+  document.getElementById('sb-mode').classList.toggle('collapsed',!!c.mode);
+  document.getElementById('sb-ctx').classList.toggle('collapsed',!!c.context);
+}
+function toggleSbSection(sec){
+  appSettings.collapsed[sec]=!appSettings.collapsed[sec];
+  saveSettings(); applySbCollapsed();
 }
 
 // ── STATE ────────────────────────────────────────────────────────
@@ -1121,7 +1159,7 @@ async function sendModal(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
-renderSkills(); loadToday(); checkKey(); initBg(); init2D();
+renderSkills(); loadToday(); checkKey(); initBg(); init2D(); applyTheme(); applySbCollapsed();
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 </script>
 </body>
