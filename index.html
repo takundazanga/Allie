@@ -499,7 +499,7 @@ textarea::placeholder{color:var(--mute);font-style:italic}
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="settings-overlay" id="settings-overlay" onclick="e=>e.target===this&&closeSettings()">
+<div class="settings-overlay" id="settings-overlay">
   <div class="settings-modal" onclick="event.stopPropagation()">
     <div class="settings-head">
       <div class="settings-head-title">Settings</div>
@@ -757,8 +757,6 @@ function burst(){
 let xp=parseInt(localStorage.getItem('allie_xp')||'0');
 let streak=parseInt(localStorage.getItem('allie_streak')||'0');
 let lastOpen=localStorage.getItem('allie_last_open')||'';
-let dailyCheckAwarded=localStorage.getItem('allie_daily_check')===new Date().toDateString();
-
 // XP values — tied to real actions
 const XP = {
   REAL_RESPONSE: 5,       // got a meaningful reply (base)
