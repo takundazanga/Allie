@@ -1048,9 +1048,9 @@ async function sendMain(){
   addMsg('user',text); history.push({role:'user',content:text}); addThinking('main-t');
   const sys=ALLIE.replace('{MODE}',mode.toUpperCase()).replace('{CTX}',CTX_LBL[ctx].toUpperCase());
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:history})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history,system:sys})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('main-t')?.remove();
@@ -1118,9 +1118,9 @@ function getModalSys(){
 async function kickModal(sys,prompt){
   skillBusy=true; skillHistory.push({role:'user',content:prompt}); addSkillThinking();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:skillHistory,system:sys})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
@@ -1142,9 +1142,9 @@ async function sendModal(){
   ta.value=''; ta.style.height='auto';
   addLearn('user',text); skillHistory.push({role:'user',content:text}); addSkillThinking();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:getModalSys(),messages:skillHistory})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:skillHistory,system:getModalSys()})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
