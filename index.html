@@ -583,7 +583,7 @@ textarea::placeholder{color:var(--mute);font-style:italic}
 
 <script>
 // ── API KEY ──────────────────────────────────────────────────────
-let API_KEY = localStorage.getItem('allie_key') || '';
+let API_KEY = ''; // API key now server-side only
 let particlesOn = true, burstOn = true;
 let appSettings = (function(){ try{ return JSON.parse(localStorage.getItem('allie_settings')||'{}'); }catch{ return {}; } })();
 if(!appSettings.theme) appSettings.theme='dark';
