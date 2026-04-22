@@ -771,7 +771,7 @@ function burst(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ps.forEach(p=>{
       p.x+=p.vx; p.y+=p.vy; p.vy+=.06; p.life-=.032;
-      const r=Math.max(0.01, p.r*p.life); // FIXED: clamp radius
+      const r=Math.max(0.01, p.r*p.life);
       ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
       ctx.fillStyle=p.color; ctx.globalAlpha=Math.max(0,p.life*.65); ctx.fill();
     });
@@ -787,12 +787,12 @@ let streak=parseInt(localStorage.getItem('allie_streak')||'0');
 let lastOpen=localStorage.getItem('allie_last_open')||'';
 // XP values — tied to real actions
 const XP = {
-  REAL_RESPONSE: 5,       // got a meaningful reply (base)
-  LONG_EXCHANGE: 3,       // bonus if history > 4 turns
-  SKILL_SESSION: 5,       // opened and received skill teaching
-  POEM_SESSION: 7,        // opened and received poem editorial
-  DAILY_CHECK: 4,         // filled today's check-in (once per day)
-  STREAK_BONUS: 2,        // on top, per streak milestone
+  REAL_RESPONSE: 5,
+  LONG_EXCHANGE: 3,
+  SKILL_SESSION: 5,
+  POEM_SESSION: 7,
+  DAILY_CHECK: 4,
+  STREAK_BONUS: 2,
 };
 const XP_PER_LEVEL=100;
 const LEVEL_NAMES=['Seedling','Scribe','Builder','Architect','Sage'];
@@ -1048,15 +1048,14 @@ async function sendMain(){
   addMsg('user',text); history.push({role:'user',content:text}); addThinking('main-t');
   const sys=ALLIE.replace('{MODE}',mode.toUpperCase()).replace('{CTX}',CTX_LBL[ctx].toUpperCase());
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:history})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history,system:sys})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('main-t')?.remove();
     if(reply && reply.length>10){
       addMsg('allie',reply); history.push({role:'assistant',content:reply});
-      // XP: real response + bonus for long exchanges
       let earned=XP.REAL_RESPONSE;
       if(history.length>8) earned+=XP.LONG_EXCHANGE;
       if(streak>6) earned+=XP.STREAK_BONUS;
@@ -1118,9 +1117,9 @@ function getModalSys(){
 async function kickModal(sys,prompt){
   skillBusy=true; skillHistory.push({role:'user',content:prompt}); addSkillThinking();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:skillHistory})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:skillHistory,system:sys})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
@@ -1142,9 +1141,9 @@ async function sendModal(){
   ta.value=''; ta.style.height='auto';
   addLearn('user',text); skillHistory.push({role:'user',content:text}); addSkillThinking();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:getModalSys(),messages:skillHistory})});
+    const res=await fetch('/api/claude',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:skillHistory,system:getModalSys()})});
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     document.getElementById('sk-t')?.remove();
